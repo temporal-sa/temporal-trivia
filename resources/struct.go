@@ -28,3 +28,7 @@ type Result struct {
 	WrongAnswers   []string `json:"wrongAnswers"`
 	Winner         string   `json:"winner"`
 }
+
+type Score struct {
+	Points int `json:"points"`
+}

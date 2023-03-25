@@ -22,9 +22,11 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Trivia Game Started")
 
-	// Loop through the number of questions
+	// Create maps for storing game results and user scoring
 	gameMap := make(map[int]resources.Result)
+	scoreMap := make(map[string]int)
 
+	// Loop through the number of questions
 	for q := 0; q < workflowInput.NumberOfQuestions; q++ {
 
 		var result resources.Result
@@ -51,7 +53,7 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 			channel.Receive(ctx, &signal)
 		})
 
-		for a := 0; a < workflowInput.NumberOfPlayers; {
+		for a := 0; a < workflowInput.NumberOfPlayers; a++ {
 			selector.Select(ctx)
 
 			if signal.Action == "Answer" {
@@ -78,15 +80,16 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 					result.CorrectAnswers = append(result.CorrectAnswers, signal.User)
 					if result.Winner == "" {
 						result.Winner = signal.User
+						scoreMap[signal.User] = scoreMap[signal.User] + 1
 					}
 				} else {
 					result.WrongAnswers = append(result.WrongAnswers, signal.User)
 				}
 			}
-			a++
 		}
 		gameMap[q] = result
-		fmt.Println("MAP: ", gameMap)
+		fmt.Println("GAME MAP: ", gameMap)
+		fmt.Println("SCORE MAP: ", scoreMap)
 	}
 
 	return nil

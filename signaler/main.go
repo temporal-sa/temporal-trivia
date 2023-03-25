@@ -46,9 +46,9 @@ func main() {
 	gameSignal := resources.Signal{
 		Action: "Answer",
 		User:   "John",
-		Answer: "mercury",
+		Answer: "skin",
 	}
-	err = SendSignal(c, gameSignal, "trivia_game_2741a492-bf3c-42a1-bf85-dc3ec455ff47")
+	err = SendSignal(c, gameSignal, "trivia_game_281adc64-217e-4d53-8b2d-5cba7e0fb05f")
 	if err != nil {
 		log.Fatalln("Error sending the Signal", err)
 	}

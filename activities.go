@@ -12,7 +12,7 @@ import (
 	_ "go.temporal.io/sdk/contrib/tools/workflowcheck/determinism"
 )
 
-func TriviaQuestionActivity(ctx context.Context, input resources.Input) (string, error) {
+func TriviaQuestionActivity(ctx context.Context, input resources.ActivityInput) (string, error) {
 	logger := activity.GetLogger(ctx)
 
 	logger.Info("TriviaQuestionActivity")
@@ -20,8 +20,7 @@ func TriviaQuestionActivity(ctx context.Context, input resources.Input) (string,
 	client := openai.NewClient(input.Key)
 	messages := make([]openai.ChatCompletionMessage, 0)
 
-	question := "Give me a trivia question?"
-	result, err := resources.SendChatGptRequest(client, messages, question)
+	result, err := resources.SendChatGptRequest(client, messages, input.Question)
 
 	if err != nil {
 		return result, temporal.NewApplicationError("ChatGPT", "request", err)

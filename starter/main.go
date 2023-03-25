@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"time"
 
 	"crypto/tls"
 	"crypto/x509"
@@ -77,9 +78,12 @@ func main() {
 	}
 
 	// Set ChatGPT API Key
-	input := resources.Input{
+	input := resources.WorkflowInput{
 		Key:               os.Getenv("CHATGPT_API_KEY"),
-		NumberOfQuestions: 5,
+		Category:          "General",
+		NumberOfQuestions: 2,
+		NumberOfPlayers:   2,
+		QuestionTimeLimit: time.Second * 30,
 	}
 
 	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, triviagame.Workflow, input)

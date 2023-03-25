@@ -1,6 +1,8 @@
 package triviagame
 
 import (
+	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/ktenzer/triviagame/resources"
@@ -11,7 +13,7 @@ import (
 )
 
 // Trivia game workflow definition
-func Workflow(ctx workflow.Context, input resources.Input) error {
+func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error {
 	ao := workflow.ActivityOptions{
 		StartToCloseTimeout: 10 * time.Second,
 	}
@@ -21,17 +23,101 @@ func Workflow(ctx workflow.Context, input resources.Input) error {
 	logger.Info("Trivia Game Started")
 
 	// Loop through the number of questions
-	for i := 0; i < input.NumberOfQuestions; i++ {
+	gameMap := make(map[int]resources.Result)
 
-		var result string
-		err := workflow.ExecuteActivity(ctx, TriviaQuestionActivity, input).Get(ctx, &result)
+	for q := 0; q < workflowInput.NumberOfQuestions; q++ {
+
+		var result resources.Result
+		var triviaQuestion string
+
+		activityInput := resources.ActivityInput{
+			Key:      workflowInput.Key,
+			Question: "Give me a " + workflowInput.Category + " trivia question that starts with what is?",
+		}
+
+		err := workflow.ExecuteActivity(ctx, TriviaQuestionActivity, activityInput).Get(ctx, &triviaQuestion)
 		if err != nil {
 			logger.Error("Activity failed.", "Error", err)
 			return err
 		}
 
-		logger.Info("Trivia question", "result", result)
+		result.Question = triviaQuestion
+		logger.Info("Trivia question", "result", triviaQuestion)
+
+		var signal resources.Signal
+		signalChan := workflow.GetSignalChannel(ctx, "game-signal")
+		selector := workflow.NewSelector(ctx)
+		selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, more bool) {
+			channel.Receive(ctx, &signal)
+		})
+
+		for a := 0; a < workflowInput.NumberOfPlayers; {
+			selector.Select(ctx)
+
+			if signal.Action == "Answer" {
+				question := parseQuestion(triviaQuestion)
+				activityInput := resources.ActivityInput{
+					Key:      workflowInput.Key,
+					Question: "Is " + signal.Answer + " " + question + " Please answer true or false followed by explanation.",
+				}
+
+				var triviaAnswer string
+				err := workflow.ExecuteActivity(ctx, TriviaQuestionActivity, activityInput).Get(ctx, &triviaAnswer)
+				if err != nil {
+					logger.Error("Activity failed.", "Error", err)
+					return err
+				}
+
+				logger.Info("Trivia answer from user", signal.User, triviaAnswer)
+
+				answerResult, answerDetails := parseAnswer(triviaAnswer)
+				result.AnswerDetails = answerDetails
+				isCorrect := validateAnswer(answerResult)
+
+				if isCorrect {
+					result.CorrectAnswers = append(result.CorrectAnswers, signal.User)
+					if result.Winner == "" {
+						result.Winner = signal.User
+					}
+				} else {
+					result.WrongAnswers = append(result.WrongAnswers, signal.User)
+				}
+			}
+			a++
+		}
+		gameMap[q] = result
+		fmt.Println("MAP: ", gameMap)
 	}
 
 	return nil
+}
+
+func parseQuestion(question string) string {
+	re := regexp.MustCompile(`What\s+is\s+(.*)`)
+	match := re.FindStringSubmatch(question)
+
+	if len(match) != 0 {
+		return match[1]
+	}
+
+	return ""
+}
+
+func parseAnswer(answer string) (string, string) {
+	re := regexp.MustCompile(`(True|False)(.*)`)
+	match := re.FindStringSubmatch(answer)
+
+	if len(match) != 0 {
+		return match[1], match[2]
+	}
+
+	return "", ""
+}
+
+func validateAnswer(answerResult string) bool {
+	if answerResult == "True" {
+		return true
+	} else {
+		return false
+	}
 }

@@ -43,12 +43,14 @@ func main() {
 	}
 	defer c.Close()
 
+	workflowId := "trivia_game_c729f837-af51-45d5-8da3-7cbe45a8ada7"
 	gameSignal := resources.Signal{
 		Action: "Answer",
 		User:   "Keith",
 		Answer: "Sahara",
 	}
-	err = SendSignal(c, gameSignal, "trivia_game_f81cbc74-238a-460b-92c3-1ebc9452edee")
+
+	err = SendSignal(c, gameSignal, workflowId)
 	if err != nil {
 		log.Fatalln("Error sending the Signal", err)
 	}
@@ -64,16 +66,4 @@ func SendSignal(c client.Client, signal resources.Signal, workflowId string) err
 	log.Println("Workflow[" + workflowId + "] Signaled")
 
 	return nil
-}
-
-func SendQuery(c client.Client, workflowId string) interface{} {
-
-	resp, _ := c.QueryWorkflow(context.Background(), workflowId, "", "state")
-
-	var result interface{}
-	if err := resp.Get(&result); err != nil {
-		log.Fatalln("Unable to decode query result", err)
-	}
-
-	return result
 }

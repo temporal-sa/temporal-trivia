@@ -26,6 +26,26 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 	gameMap := make(map[int]resources.Result)
 	scoreMap := make(map[string]int)
 
+	// Setup query handler for tracking game progress
+	err := workflow.SetQueryHandler(ctx, "getDetails", func(input []byte) (map[int]resources.Result, error) {
+		return gameMap, nil
+	})
+
+	if err != nil {
+		logger.Error("SetQueryHandler failed for gameMap: " + err.Error())
+		return err
+	}
+
+	// Setup query handler for tracking game progress
+	err = workflow.SetQueryHandler(ctx, "getScore", func(input []byte) (map[string]int, error) {
+		return scoreMap, nil
+	})
+
+	if err != nil {
+		logger.Error("SetQueryHandler failed for scoreMap: " + err.Error())
+		return err
+	}
+
 	// Loop through the number of questions
 	for q := 0; q < workflowInput.NumberOfQuestions; q++ {
 
@@ -92,8 +112,9 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 		fmt.Println("SCORE MAP: ", scoreMap)
 	}
 
+	// Output final score via activity
 	var scoreOutput resources.ActivityScoreOutput
-	err := workflow.ExecuteActivity(ctx, ScoreTotalActivity, scoreMap).Get(ctx, &scoreOutput)
+	err = workflow.ExecuteActivity(ctx, ScoreTotalActivity, scoreMap).Get(ctx, &scoreOutput)
 	if err != nil {
 		logger.Error("Activity failed.", "Error", err)
 		return err

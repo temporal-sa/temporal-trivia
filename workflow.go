@@ -52,6 +52,9 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 		var result resources.Result
 		var triviaQuestion string
 
+		// Start timer based on question time limit of game
+		timer := workflow.NewTimer(ctx, workflowInput.QuestionTimeLimit)
+
 		activityInput := resources.ActivityInput{
 			Key:      workflowInput.Key,
 			Question: "Give me a " + workflowInput.Category + " trivia question that starts with what is?",
@@ -74,10 +77,27 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 			channel.Receive(ctx, &signal)
 		})
 
-		for a := 0; a < workflowInput.NumberOfPlayers; a++ {
-			selector.Select(ctx)
+		var timerFired bool = false
+		selector.AddFuture(timer, func(f workflow.Future) {
+			err := f.Get(ctx, nil)
+			if err == nil {
+				logger.Info("Time limit for question has exceeded the limit of " + workflowInput.QuestionTimeLimit.String() + " seconds")
+				timerFired = true
+			}
+		})
 
-			if signal.Action == "Answer" {
+		// Loop through the players we expect to answer and break loop if question timer expires
+		for a := 0; a < workflowInput.NumberOfPlayers; a++ {
+			if timerFired {
+				continue
+			} else {
+				selector.Select(ctx)
+			}
+
+			// handle duplicate answers from same player
+			if signal.Action == "Answer" && !isAnswerDuplicate(gameMap[q].CorrectAnswers, signal.User) &&
+				!isAnswerDuplicate(gameMap[q].WrongAnswers, signal.User) {
+
 				question := parseQuestion(triviaQuestion)
 				activityInput := resources.ActivityInput{
 					Key:      workflowInput.Key,
@@ -107,6 +127,9 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 					result.WrongAnswers = append(result.WrongAnswers, signal.User)
 				}
 				gameMap[q] = result
+			} else {
+				logger.Warn("Incorrect signal received", signal)
+				a--
 			}
 		}
 		gameMap[q] = result
@@ -154,4 +177,13 @@ func validateAnswer(answerResult string) bool {
 	} else {
 		return false
 	}
+}
+
+func isAnswerDuplicate(list []string, str string) bool {
+	for i := 0; i < len(list); i++ {
+		if list[i] == str {
+			return true
+		}
+	}
+	return false
 }

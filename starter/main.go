@@ -83,7 +83,7 @@ func main() {
 		Category:          "General",
 		NumberOfQuestions: 2,
 		NumberOfPlayers:   2,
-		QuestionTimeLimit: time.Second * 30,
+		QuestionTimeLimit: time.Second * 60,
 	}
 
 	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, triviagame.Workflow, input)

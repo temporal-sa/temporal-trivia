@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 
 	"crypto/tls"
 
-	"github.com/ktenzer/triviagame/resources"
 	"go.temporal.io/sdk/client"
 )
 
@@ -44,26 +44,28 @@ func main() {
 	defer c.Close()
 
 	workflowId := "trivia_game_898f9790-67c2-422e-947c-08832a88b21c"
-	gameSignal := resources.Signal{
-		Action: "Answer",
-		User:   "Keith",
-		Answer: "Giraffe",
-	}
 
-	err = SendSignal(c, gameSignal, workflowId)
+	gameMap, err := SendQuery(c, workflowId, "getDetails")
 	if err != nil {
-		log.Fatalln("Error sending the Signal", err)
+		log.Fatalln("Error sending the Query", err)
 	}
+	fmt.Println(gameMap)
+
+	scoreMap, err := SendQuery(c, workflowId, "getScore")
+	if err != nil {
+		log.Fatalln("Error sending the Query", err)
+	}
+	fmt.Println(scoreMap)
 }
 
-func SendSignal(c client.Client, signal resources.Signal, workflowId string) error {
+func SendQuery(c client.Client, workflowId, query string) (interface{}, error) {
 
-	err := c.SignalWorkflow(context.Background(), workflowId, "", "game-signal", signal)
-	if err != nil {
-		return err
+	resp, _ := c.QueryWorkflow(context.Background(), workflowId, "", query)
+
+	var result interface{}
+	if err := resp.Get(&result); err != nil {
+		return nil, err
 	}
 
-	log.Println("Workflow[" + workflowId + "] Signaled")
-
-	return nil
+	return result, nil
 }

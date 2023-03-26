@@ -65,6 +65,7 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 
 		result.Question = triviaQuestion
 		logger.Info("Trivia question", "result", triviaQuestion)
+		gameMap[q] = result
 
 		var signal resources.Signal
 		signalChan := workflow.GetSignalChannel(ctx, "game-signal")
@@ -105,6 +106,7 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 				} else {
 					result.WrongAnswers = append(result.WrongAnswers, signal.User)
 				}
+				gameMap[q] = result
 			}
 		}
 		gameMap[q] = result

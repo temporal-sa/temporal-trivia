@@ -73,6 +73,7 @@ func main() {
 
 	w.RegisterWorkflow(triviagame.Workflow)
 	w.RegisterActivity(triviagame.TriviaQuestionActivity)
+	w.RegisterActivity(triviagame.ScoreTotalActivity)
 
 	err = w.Run(worker.InterruptCh())
 	if err != nil {

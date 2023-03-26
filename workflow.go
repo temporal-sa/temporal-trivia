@@ -92,6 +92,14 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 		fmt.Println("SCORE MAP: ", scoreMap)
 	}
 
+	var scoreOutput resources.ActivityScoreOutput
+	err := workflow.ExecuteActivity(ctx, ScoreTotalActivity, scoreMap).Get(ctx, &scoreOutput)
+	if err != nil {
+		logger.Error("Activity failed.", "Error", err)
+		return err
+	}
+
+	logger.Info("The winners are...", scoreOutput)
 	return nil
 }
 

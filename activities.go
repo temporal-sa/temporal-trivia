@@ -28,3 +28,25 @@ func TriviaQuestionActivity(ctx context.Context, input resources.ActivityInput) 
 
 	return result, nil
 }
+
+func ScoreTotalActivity(ctx context.Context, scoreMap map[string]int) (resources.ActivityScoreOutput, error) {
+	logger := activity.GetLogger(ctx)
+
+	logger.Info("ScoreTotalActivity")
+
+	var highScore int
+	var winners []string
+	for user, score := range scoreMap {
+		if score >= highScore {
+			highScore = score
+			winners = append(winners, user)
+		}
+	}
+
+	output := &resources.ActivityScoreOutput{
+		Winners:   winners,
+		HighScore: highScore,
+	}
+
+	return *output, nil
+}

@@ -45,10 +45,10 @@ func main() {
 
 	gameSignal := resources.Signal{
 		Action: "Answer",
-		User:   "John",
-		Answer: "skin",
+		User:   "Keith",
+		Answer: "Sahara",
 	}
-	err = SendSignal(c, gameSignal, "trivia_game_281adc64-217e-4d53-8b2d-5cba7e0fb05f")
+	err = SendSignal(c, gameSignal, "trivia_game_f81cbc74-238a-460b-92c3-1ebc9452edee")
 	if err != nil {
 		log.Fatalln("Error sending the Signal", err)
 	}

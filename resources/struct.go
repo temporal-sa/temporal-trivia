@@ -32,3 +32,8 @@ type Result struct {
 type Score struct {
 	Points int `json:"points"`
 }
+
+type ActivityScoreOutput struct {
+	Winners   []string `json:"winners"`
+	HighScore int      `json:"highScore"`
+}

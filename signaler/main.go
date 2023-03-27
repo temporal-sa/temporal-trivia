@@ -43,11 +43,11 @@ func main() {
 	}
 	defer c.Close()
 
-	workflowId := "trivia_game_8ab950a8-041a-4e1a-bfe9-e1afad11b118"
+	workflowId := "trivia_game_1b5ca8b6-27e9-488f-95d6-a16d1a0265da"
 	gameSignal := resources.Signal{
 		Action: "Answer",
 		User:   "Keith",
-		Answer: "a",
+		Answer: "A",
 	}
 
 	err = SendSignal(c, gameSignal, workflowId)

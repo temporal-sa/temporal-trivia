@@ -1,14 +1,12 @@
 package resources
 
-import "time"
-
 type WorkflowInput struct {
-	Key               string        `json:"key"`
-	Category          string        `json:"category"`
-	NumberOfQuestions int           `json:"numberOfQuestions"`
-	NumberOfPlayers   int           `json:"numberOfPlayers"`
-	NumberOfAnswers   int           `json:"numberOfAnswer"`
-	QuestionTimeLimit time.Duration `json:"questionTimeLimit"`
+	Key               string `json:"key"`
+	Category          string `json:"category"`
+	NumberOfQuestions int    `json:"numberOfQuestions"`
+	NumberOfPlayers   int    `json:"numberOfPlayers"`
+	NumberOfAnswers   int    `json:"numberOfAnswer"`
+	QuestionTimeLimit int    `json:"questionTimeLimit"`
 }
 
 type ActivityInput struct {
@@ -23,19 +21,14 @@ type Signal struct {
 }
 
 type Result struct {
-	Question          string            `json:"question"`
-	AnswerDetails     string            `json:"answer"`
-	CorrectAnswers    []string          `json:"correctAnswers"`
-	WrongAnswers      []string          `json:"wrongAnswers"`
-	MultipleChoiceMap map[string]string `json:"multipleChoiceAnswers"`
-	Winner            string            `json:"winner"`
+	Question          string                `json:"question"`
+	Answer            string                `json:"answer"`
+	Submissions       map[string]Submission `json:"submissions"`
+	MultipleChoiceMap map[string]string     `json:"multipleChoiceAnswers"`
+	Winner            string                `json:"winner"`
 }
 
-type Score struct {
-	Points int `json:"points"`
-}
-
-type ActivityScoreOutput struct {
-	Winners   []string `json:"winners"`
-	HighScore int      `json:"highScore"`
+type Submission struct {
+	Answer    string `json:"answer"`
+	IsCorrect bool   `json:"isCorrect"`
 }

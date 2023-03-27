@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"os"
-	"time"
 
 	"crypto/tls"
 	"crypto/x509"
@@ -83,7 +82,7 @@ func main() {
 		Category:          "General",
 		NumberOfQuestions: 2,
 		NumberOfPlayers:   2,
-		QuestionTimeLimit: time.Second * 60,
+		QuestionTimeLimit: 60,
 	}
 
 	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, triviagame.Workflow, input)

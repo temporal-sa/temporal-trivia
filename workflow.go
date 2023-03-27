@@ -3,6 +3,7 @@ package triviagame
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/ktenzer/triviagame/resources"
@@ -57,7 +58,7 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 
 		activityInput := resources.ActivityInput{
 			Key:      workflowInput.Key,
-			Question: "Give me a " + workflowInput.Category + " trivia question that starts with what is?",
+			Question: "Give me a different " + workflowInput.Category + " trivia question that starts with what is and has 4 possible answers A)-D)? Please provide a newline after the question. Do not provide answer.",
 		}
 
 		err := workflow.ExecuteActivity(ctx, TriviaQuestionActivity, activityInput).Get(ctx, &triviaQuestion)
@@ -69,6 +70,11 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 		result.Question = triviaQuestion
 		logger.Info("Trivia question", "result", triviaQuestion)
 		gameMap[q] = result
+
+		answersMap := parsePossibleAnswers(triviaQuestion)
+		fmt.Println("HERE")
+		fmt.Println(answersMap)
+		result.MultipleChoiceMap = answersMap
 
 		var signal resources.Signal
 		signalChan := workflow.GetSignalChannel(ctx, "game-signal")
@@ -98,10 +104,19 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 			if signal.Action == "Answer" && !isAnswerDuplicate(gameMap[q].CorrectAnswers, signal.User) &&
 				!isAnswerDuplicate(gameMap[q].WrongAnswers, signal.User) {
 
+				// if we don't receive valid answer mark as wrong and continue
+				if !validateAnswer(signal.Answer) {
+					result.WrongAnswers = append(result.WrongAnswers, signal.User)
+					continue
+				}
+
+				// ensure answer is upper case
+				answerUpperCase := strings.ToUpper(signal.Answer)
+
 				question := parseQuestion(triviaQuestion)
 				activityInput := resources.ActivityInput{
 					Key:      workflowInput.Key,
-					Question: "Is " + signal.Answer + " " + question + " Please answer true or false followed by explanation.",
+					Question: "Is " + answersMap[answerUpperCase] + " " + question + " Please answer true or false followed by explanation.",
 				}
 
 				var triviaAnswer string
@@ -115,7 +130,7 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 
 				answerResult, answerDetails := parseAnswer(triviaAnswer)
 				result.AnswerDetails = answerDetails
-				isCorrect := validateAnswer(answerResult)
+				isCorrect := validateAnswerResult(answerResult)
 
 				if isCorrect {
 					result.CorrectAnswers = append(result.CorrectAnswers, signal.User)
@@ -149,17 +164,32 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 	return nil
 }
 
+// Parse the question
 func parseQuestion(question string) string {
-	re := regexp.MustCompile(`What\s+is\s+(.*)`)
+	re := regexp.MustCompile(`^What is (.+)\?`)
 	match := re.FindStringSubmatch(question)
 
-	if len(match) != 0 {
+	if len(match) == 2 {
 		return match[1]
 	}
 
 	return ""
 }
 
+// Parse the possible answers
+func parsePossibleAnswers(question string) map[string]string {
+	re := regexp.MustCompile(`([A-Z])\) (\w+(?: \w+)*)`)
+	matches := re.FindAllStringSubmatch(question, -1)
+
+	answers := make(map[string]string)
+	for _, match := range matches {
+		answers[match[1]] = match[2]
+	}
+
+	return answers
+}
+
+// Parse response of answer to determine if correct
 func parseAnswer(answer string) (string, string) {
 	re := regexp.MustCompile(`(True|False)(.*)`)
 	match := re.FindStringSubmatch(answer)
@@ -171,7 +201,16 @@ func parseAnswer(answer string) (string, string) {
 	return "", ""
 }
 
-func validateAnswer(answerResult string) bool {
+// validate answer
+func validateAnswer(answer string) bool {
+	re := regexp.MustCompile(`^[A-Da-d]$`)
+	isMatch := re.MatchString(answer)
+
+	return isMatch
+}
+
+// Validation for answer result
+func validateAnswerResult(answerResult string) bool {
 	if answerResult == "True" {
 		return true
 	} else {
@@ -179,6 +218,7 @@ func validateAnswer(answerResult string) bool {
 	}
 }
 
+// Detect answer duplication
 func isAnswerDuplicate(list []string, str string) bool {
 	for i := 0; i < len(list); i++ {
 		if list[i] == str {

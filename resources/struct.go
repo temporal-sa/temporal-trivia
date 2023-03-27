@@ -7,6 +7,7 @@ type WorkflowInput struct {
 	Category          string        `json:"category"`
 	NumberOfQuestions int           `json:"numberOfQuestions"`
 	NumberOfPlayers   int           `json:"numberOfPlayers"`
+	NumberOfAnswers   int           `json:"numberOfAnswer"`
 	QuestionTimeLimit time.Duration `json:"questionTimeLimit"`
 }
 
@@ -22,11 +23,12 @@ type Signal struct {
 }
 
 type Result struct {
-	Question       string   `json:"question"`
-	AnswerDetails  string   `json:"answer"`
-	CorrectAnswers []string `json:"correctAnswers"`
-	WrongAnswers   []string `json:"wrongAnswers"`
-	Winner         string   `json:"winner"`
+	Question          string            `json:"question"`
+	AnswerDetails     string            `json:"answer"`
+	CorrectAnswers    []string          `json:"correctAnswers"`
+	WrongAnswers      []string          `json:"wrongAnswers"`
+	MultipleChoiceMap map[string]string `json:"multipleChoiceAnswers"`
+	Winner            string            `json:"winner"`
 }
 
 type Score struct {

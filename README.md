@@ -4,6 +4,7 @@ A trivia game built on temporal
 ## Setup
 Set the following environment variables. These variables configure the temporal cloud namespace, endpoint and certs. In addition since chatgpt is used a valid chatgpt API key is required. YOu can create a chatgpt API key [here](https://platform.openai.com/account/api-keys).
 
+Configuration parameters
 <pre>
 export MTLS=true
 export TEMPORAL_NAMESPACE="namespace.AccountId"
@@ -11,6 +12,13 @@ export TEMPORAL_HOST_URL="$TEMPORAL_NAMESPACE.tmprl.cloud:7233"
 export TEMPORAL_MTLS_TLS_CERT="/path/to/ca.pem"
 export TEMPORAL_MTLS_TLS_KEY="/path/to/ca.key"
 export CHATGPT_API_KEY="key"
+</pre>
+
+Game parameters
+<pre>
+export TEMPORAL_WORKFLOW_ID="trivia_game_152a2c56-35fc-4e0d-96e9-b5b9544ab9a9"
+export TEMPORAL_TRIVIA_PLAYER="Keith"
+export TEMPORAL_TRIVIA_ANSWER="A"
 </pre>
 
 <pre>

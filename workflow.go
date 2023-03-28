@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ktenzer/triviagame/resources"
+	"github.com/ktenzer/temporal-trivia/resources"
 	"go.temporal.io/sdk/workflow"
 
 	// TODO(cretz): Remove when tagged
@@ -53,12 +53,9 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 		var result resources.Result
 		var triviaQuestion string
 
-		// Start timer based on question time limit of game
-		timer := workflow.NewTimer(ctx, time.Duration(workflowInput.QuestionTimeLimit)*time.Second)
-
 		activityInput := resources.ActivityInput{
 			Key:      workflowInput.Key,
-			Question: "Give me a different " + workflowInput.Category + " trivia question that starts with what is and has 4 possible answers A), B), C), or D)? Please provide a newline after the question. Give the correct Answer letter.",
+			Question: "Give me a different " + workflowInput.Category + " trivia question that starts with what is and has 4 possible answers A), B), C), or D)? Please provide a newline after the question. Give the correct Answer letter at the end.",
 		}
 
 		err := workflow.ExecuteActivity(ctx, TriviaQuestionActivity, activityInput).Get(ctx, &triviaQuestion)
@@ -67,11 +64,15 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 			return err
 		}
 
+		// Start timer based on question time limit of game
+		timer := workflow.NewTimer(ctx, time.Duration(workflowInput.QuestionTimeLimit)*time.Second)
+
 		logger.Info("Trivia question", "result", triviaQuestion)
 
 		correctAnswer := parseAnswer(triviaQuestion)
 		result.Answer = correctAnswer
-		result.Question = triviaQuestion
+		result.Question = parseQuestion(triviaQuestion)
+		fmt.Println("HERE \n" + result.Question)
 		gameMap[q] = result
 
 		answersMap := parsePossibleAnswers(triviaQuestion)
@@ -166,14 +167,10 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 
 // Parse the question
 func parseQuestion(question string) string {
-	re := regexp.MustCompile(`^What is (.+)\?`)
-	match := re.FindStringSubmatch(question)
+	re := regexp.MustCompile(`\n[^\n]*$`)
+	removedAnswer := re.ReplaceAllString(question, "")
 
-	if len(match) == 2 {
-		return match[1]
-	}
-
-	return ""
+	return removedAnswer
 }
 
 // Parse the possible answers

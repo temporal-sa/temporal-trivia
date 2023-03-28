@@ -9,8 +9,8 @@ import (
 	"crypto/x509"
 
 	"github.com/google/uuid"
-	"github.com/ktenzer/triviagame"
-	"github.com/ktenzer/triviagame/resources"
+	triviagame "github.com/ktenzer/temporal-trivia"
+	"github.com/ktenzer/temporal-trivia/resources"
 	"go.temporal.io/sdk/client"
 )
 

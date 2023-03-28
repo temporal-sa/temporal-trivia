@@ -7,7 +7,7 @@ import (
 
 	"crypto/tls"
 
-	"github.com/ktenzer/triviagame/resources"
+	"github.com/ktenzer/temporal-trivia/resources"
 	"go.temporal.io/sdk/client"
 )
 

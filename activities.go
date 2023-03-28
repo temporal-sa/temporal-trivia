@@ -2,8 +2,9 @@ package triviagame
 
 import (
 	"context"
+	"strconv"
 
-	"github.com/ktenzer/triviagame/resources"
+	"github.com/ktenzer/temporal-trivia/resources"
 	"github.com/sashabaranov/go-openai"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/temporal"
@@ -40,9 +41,9 @@ func ScoreTotalActivity(ctx context.Context, scoreboardMap map[string]int) ([]st
 	for player, score := range scoreboardMap {
 		if score > highestScore {
 			highestScore = score
-			playersWithHighestScore = []string{player}
+			playersWithHighestScore = []string{player + ":" + strconv.Itoa(highestScore)}
 		} else if score == highestScore {
-			playersWithHighestScore = append(playersWithHighestScore, player)
+			playersWithHighestScore = append(playersWithHighestScore, player+":"+strconv.Itoa(highestScore))
 		}
 	}
 

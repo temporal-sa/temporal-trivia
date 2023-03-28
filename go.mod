@@ -1,12 +1,13 @@
-module github.com/ktenzer/triviagame
+module github.com/ktenzer/temporal-trivia
 
 go 1.19
 
 require (
 	github.com/google/uuid v1.3.0
+	github.com/pborman/getopt/v2 v2.1.0
 	github.com/sashabaranov/go-openai v1.5.7
 	go.temporal.io/sdk v1.21.1
-	go.temporal.io/sdk/contrib/tools/workflowcheck v0.0.0-20230322215901-e62df8ce6ca5
+	go.temporal.io/sdk/contrib/tools/workflowcheck v0.0.0-20230328164709-88a40de39c33
 )
 
 require (

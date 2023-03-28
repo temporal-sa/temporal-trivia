@@ -7,7 +7,7 @@ import (
 	"crypto/x509"
 	"os"
 
-	"github.com/ktenzer/triviagame"
+	triviagame "github.com/ktenzer/temporal-trivia"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 )

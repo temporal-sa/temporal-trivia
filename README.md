@@ -2,7 +2,7 @@
 A trivia game built on temporal
 
 ## Setup
-Set the following environment variables. These variables configure the temporal cloud namespace, endpoint and certs. In addition since chatgpt is used a valid chatgpt API key is required. YOu can create a chatgpt API key [here](https://platform.openai.com/account/api-keys).
+Set the following environment variables. These variables configure the temporal cloud namespace, endpoint and certs. In addition since chatgpt is used a valid chatgpt API key is required. You can create a chatgpt API key [here](https://platform.openai.com/account/api-keys).
 
 Configuration parameters
 <pre>

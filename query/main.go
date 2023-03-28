@@ -43,7 +43,7 @@ func main() {
 	}
 	defer c.Close()
 
-	workflowId := "trivia_game_1b5ca8b6-27e9-488f-95d6-a16d1a0265da"
+	workflowId := "trivia_game_0440c320-fa55-4e92-99ea-20cc3b1a414e"
 
 	gameMap, err := SendQuery(c, workflowId, "getDetails")
 	if err != nil {

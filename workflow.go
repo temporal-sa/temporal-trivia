@@ -99,6 +99,7 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 		for a := 0; a < workflowInput.NumberOfPlayers; a++ {
 			var submission resources.Submission
 
+			// continue to next question if timer fires
 			if timerFired {
 				continue
 			} else {
@@ -106,7 +107,7 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 			}
 
 			// handle duplicate answers from same player
-			if signal.Action == "Answer" && !isAnswerDuplicate(gameMap[q].Submissions, signal.User) {
+			if signal.Action == "Answer" && !isAnswerDuplicate(gameMap[q].Submissions, signal.Player) {
 				// if we don't receive valid answer mark as wrong and continue
 				if !validateAnswer(signal.Answer) {
 					submission.IsCorrect = false
@@ -121,18 +122,24 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 					submission.Answer = signal.Answer
 
 					if result.Winner == "" {
-						result.Winner = signal.User
-						playerScore := scoreboardMap[signal.User] + 2
-						scoreboardMap[signal.User] = playerScore
+						result.Winner = signal.Player
+						playerScore := scoreboardMap[signal.Player] + 2
+						scoreboardMap[signal.Player] = playerScore
 					} else {
-						playerScore := scoreboardMap[signal.User] + 1
-						scoreboardMap[signal.User] = playerScore
+						playerScore := scoreboardMap[signal.Player] + 1
+						scoreboardMap[signal.Player] = playerScore
 					}
 				} else {
 					submission.IsCorrect = false
 					submission.Answer = signal.Answer
+
+					// add player to scoreboard if they don't exist
+					_, ok := scoreboardMap[signal.Player]
+					if !ok {
+						scoreboardMap[signal.Player] = 0
+					}
 				}
-				submissionsMap[signal.User] = submission
+				submissionsMap[signal.Player] = submission
 				result.Submissions = submissionsMap
 				gameMap[q] = result
 			} else {

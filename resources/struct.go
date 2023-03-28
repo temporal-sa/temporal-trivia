@@ -16,7 +16,7 @@ type ActivityInput struct {
 
 type Signal struct {
 	Action string `json:"action"`
-	User   string `json:"user"`
+	Player string `json:"player"`
 	Answer string `json:"answer"`
 }
 

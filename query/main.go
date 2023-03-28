@@ -43,7 +43,10 @@ func main() {
 	}
 	defer c.Close()
 
-	workflowId := "trivia_game_0440c320-fa55-4e92-99ea-20cc3b1a414e"
+	workflowId := os.Getenv("TEMPORAL_WORKFLOW_ID")
+	if workflowId == "" {
+		log.Fatal("Please specify workflowId by exporting environment variable TEMPORAL_WORKFLOW_ID")
+	}
 
 	gameMap, err := SendQuery(c, workflowId, "getDetails")
 	if err != nil {

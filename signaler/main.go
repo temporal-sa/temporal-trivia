@@ -43,11 +43,17 @@ func main() {
 	}
 	defer c.Close()
 
-	workflowId := "trivia_game_0440c320-fa55-4e92-99ea-20cc3b1a414e"
+	workflowId := os.Getenv("TEMPORAL_WORKFLOW_ID")
+	player := os.Getenv("TEMPORAL_TRIVIA_PLAYER")
+	answer := os.Getenv("TEMPORAL_TRIVIA_ANSWER")
+	if workflowId == "" || player == "" || answer == "" {
+		log.Fatal("Please specify workflowId, player and answer by exporting environment variables TEMPORAL_WORKFLOW_ID, TEMPORAL_TRIVIA_PLAYER, TEMPORAL_TRIVIA_ANSWER")
+	}
+
 	gameSignal := resources.Signal{
 		Action: "Answer",
-		Player: "John",
-		Answer: "D",
+		Player: player,
+		Answer: answer,
 	}
 
 	err = SendSignal(c, gameSignal, workflowId)

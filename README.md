@@ -22,22 +22,66 @@ $ git clone https://github.com/ktenzer/temporal-trivia.git
 $ cd temporal-trivia
 </pre>
 
-Run worker
+### Run worker
 <pre>
 $ go run worker/main.go
 </pre>
 
-Start the game
+### Start Worfklow (game)
+You can choose how many players, questions and even the time limit per question.
+
 <pre>
 $ go run starter/main.go
 </pre>
 
-Query game for questions and status of progress, you need to update workflowId with the id returned from start
+Each game is a workflow. Starting the workflow starts the game. We interact with the game by querying and sending signals to workflow using workflowId.
+
 <pre>
-$ go run query/main.go
+2023/03/27 18:50:25 Started workflow WorkflowID trivia_game_152a2c56-35fc-4e0d-96e9-b5b9544ab9a9 RunID 06f87678-06b7-404b-8629-5ead6cc06e96
 </pre>
 
-Send answers from players via signal, you need to update workflowId and also answers
+### Query Workflow
+Query game for questions and status of progress, set the workflowId via environment from return of workflow start.
 <pre>
-$ go run signaler/main.go
+$ TEMPORAL_WORKFLOW_ID=trivia_game_152a2c56-35fc-4e0d-96e9-b5b9544ab9a9 go run query/main.go
+</pre>
+
+Since we just started the game all we see is the question and multiple choice answers and the correct answer (don't cheat).
+<pre>
+map[0:map[answer:C multipleChoiceAnswers:<nil> question:What is the largest organ in the human body? 
+
+A) Liver 
+B) Brain 
+C) Skin 
+D) Heart 
+
+Answer: C) Skin submissions:<nil> winner:]]
+map[]
+</pre>
+
+### Send Answers per Player
+Using a signal players can respond to the question with their answers. The player and the answer are set via environment parameters.
+
+John answers a
+<pre>
+TEMPORAL_WORKFLOW_ID=trivia_game_152a2c56-35fc-4e0d-96e9-b5b9544ab9a9 TEMPORAL_TRIVIA_PLAYER=john TEMPORAL_TRIVIA_ANSWER=a go run signaler/main.go 
+</pre>
+
+Keith answers c
+<pre>
+TEMPORAL_WORKFLOW_ID=trivia_game_152a2c56-35fc-4e0d-96e9-b5b9544ab9a9 TEMPORAL_TRIVIA_PLAYER=keith TEMPORAL_TRIVIA_ANSWER=c go run signaler/main.go
+</pre>
+
+### Query Game for Progress
+We can query at any time to get current status of the game and a scoreboard. New questions will show up until we have ran through all questions and then the workflow as well as game are completed.
+<pre>
+$ TEMPORAL_WORKFLOW_ID=trivia_game_152a2c56-35fc-4e0d-96e9-b5b9544ab9a9 go run query/main.go
+map[0:map[answer:C multipleChoiceAnswers:map[A:Liver B:Brain C:Skin D:Heart] question:What is the largest organ in the human body? 
+
+A) Liver 
+B) Brain 
+C) Skin 
+D) Heart 
+
+Answer: C) Skin submissions:map[john:map[answer:a isCorrect:false] keith:map[answer:c isCorrect:true]] winner:keith]
 </pre>

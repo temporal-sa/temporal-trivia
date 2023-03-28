@@ -85,3 +85,5 @@ D) Heart
 
 Answer: C) Skin submissions:map[john:map[answer:a isCorrect:false] keith:map[answer:c isCorrect:true]] winner:keith]
 </pre>
+
+![Event History](/img/history.png)

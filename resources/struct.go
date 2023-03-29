@@ -33,3 +33,13 @@ type Submission struct {
 	Answer    string `json:"answer"`
 	IsCorrect bool   `json:"isCorrect"`
 }
+
+type GameProgress struct {
+	NumberOfQuestions int `json:"numberOfQuestions"`
+	CurrentQuestion   int `json:"currentQuestion"`
+}
+
+type ScoreBoard struct {
+	Player string `json:"value"`
+	Score  int    `json:"key"`
+}

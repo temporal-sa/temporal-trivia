@@ -1,20 +1,20 @@
 package triviagame
 
 import (
-	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
+	activities "github.com/ktenzer/temporal-trivia/activities"
 	"github.com/ktenzer/temporal-trivia/resources"
 	"go.temporal.io/sdk/workflow"
 
-	// TODO(cretz): Remove when tagged
 	_ "go.temporal.io/sdk/contrib/tools/workflowcheck/determinism"
 )
 
 // Trivia game workflow definition
-func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error {
+func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error {
 	ao := workflow.ActivityOptions{
 		StartToCloseTimeout: 100 * time.Second,
 	}
@@ -23,11 +23,14 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Trivia Game Started")
 
-	// Create maps for storing game results and user scoring
+	// Create objects for storing game results, progress and player scoring
 	gameMap := make(map[int]resources.Result)
-	scoreboardMap := make(map[string]int)
+	scoreMap := make(map[string]int)
+	var gameProgress resources.GameProgress
+	gameProgress.NumberOfQuestions = workflowInput.NumberOfQuestions
+	gameProgress.CurrentQuestion = 0
 
-	// Setup query handler for tracking game progress
+	// Setup query handler for gathering game details
 	err := workflow.SetQueryHandler(ctx, "getDetails", func(input []byte) (map[int]resources.Result, error) {
 		return gameMap, nil
 	})
@@ -37,9 +40,9 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 		return err
 	}
 
-	// Setup query handler for tracking game progress
+	// Setup query handler for gathering player score
 	err = workflow.SetQueryHandler(ctx, "getScore", func(input []byte) (map[string]int, error) {
-		return scoreboardMap, nil
+		return scoreMap, nil
 	})
 
 	if err != nil {
@@ -47,31 +50,28 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 		return err
 	}
 
-	// pre-fetch trivia questions
-	var triviaQuestions []string
+	// Setup query handler for gathering game progress
+	err = workflow.SetQueryHandler(ctx, "getProgress", func(input []byte) (resources.GameProgress, error) {
+		return gameProgress, nil
+	})
+
+	if err != nil {
+		logger.Error("SetQueryHandler failed for scoreMap: " + err.Error())
+		return err
+	}
+
+	// set activity inputs for starting game
 	activityInput := resources.ActivityInput{
 		Key:               workflowInput.Key,
 		Category:          workflowInput.Category,
 		NumberOfQuestions: workflowInput.NumberOfQuestions,
 	}
 
-	err = workflow.ExecuteActivity(ctx, TriviaQuestionActivity, activityInput).Get(ctx, &triviaQuestions)
+	// run activity to start game and pre-fetch trivia questions and answers
+	err = workflow.ExecuteActivity(ctx, activities.TriviaQuestionActivity, activityInput).Get(ctx, &gameMap)
 	if err != nil {
 		logger.Error("Activity failed.", "Error", err)
 		return err
-	}
-
-	// populate gameMap
-	for i, question := range triviaQuestions {
-		var result resources.Result
-		correctAnswer := parseAnswer(question)
-		result.Answer = correctAnswer
-
-		result.Question = parseQuestion(question)
-
-		answersMap := parsePossibleAnswers(question)
-		result.MultipleChoiceMap = answersMap
-		gameMap[i] = result
 	}
 
 	var signal resources.Signal
@@ -82,9 +82,8 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 	})
 
 	// loop through questions, start timer
-	for key, _ := range triviaQuestions {
-		result := gameMap[key]
-
+	for key, _ := range gameMap {
+		gameProgress.CurrentQuestion = key + 1
 		timer := workflow.NewTimer(ctx, time.Duration(workflowInput.QuestionTimeLimit)*time.Second)
 
 		var timerFired bool = false
@@ -97,6 +96,7 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 		})
 
 		// Loop through the number of players we expect to answer and break loop if question timer expires
+		result := gameMap[key]
 		var submissionsMap = make(map[string]resources.Submission)
 		for a := 0; a < workflowInput.NumberOfPlayers; a++ {
 			// continue to next question if timer fires
@@ -126,19 +126,19 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 
 					if result.Winner == "" {
 						result.Winner = signal.Player
-						playerScore := scoreboardMap[signal.Player] + 2
-						scoreboardMap[signal.Player] = playerScore
+						playerScore := scoreMap[signal.Player] + 2
+						scoreMap[signal.Player] = playerScore
 					} else {
-						playerScore := scoreboardMap[signal.Player] + 1
-						scoreboardMap[signal.Player] = playerScore
+						playerScore := scoreMap[signal.Player] + 1
+						scoreMap[signal.Player] = playerScore
 					}
 				} else {
 					submission.IsCorrect = false
 
 					// add player to scoreboard if they don't exist
-					_, ok := scoreboardMap[signal.Player]
+					_, ok := scoreMap[signal.Player]
 					if !ok {
-						scoreboardMap[signal.Player] = 0
+						scoreMap[signal.Player] = 0
 					}
 				}
 				submissionsMap[signal.Player] = submission
@@ -151,43 +151,19 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 		}
 	}
 
-	fmt.Println("GAME MAP: ", gameMap)
-	fmt.Println("SCORE MAP: ", scoreboardMap)
+	// sort scoreboard
+	var scoreboard []resources.ScoreBoard
+	err = workflow.ExecuteActivity(ctx, activities.LeaderBoardActivity, scoreMap).Get(ctx, &scoreboard)
+	if err != nil {
+		logger.Error("Activity failed.", "Error", err)
+		return err
+	}
+
+	for _, sb := range scoreboard {
+		logger.Info("\n----- Leader Board -----\n" + "-- Player -- -- Score --\n" + sb.Player + "\t\t" + strconv.Itoa(sb.Score) + "\n")
+	}
 
 	return nil
-}
-
-// Parse the question
-func parseQuestion(question string) string {
-	re := regexp.MustCompile(`\n[^\n]*$`)
-	removedAnswer := re.ReplaceAllString(question, "")
-
-	return removedAnswer
-}
-
-// Parse the possible answers
-func parsePossibleAnswers(question string) map[string]string {
-	re := regexp.MustCompile(`([A-Z])\) (\w+(?: \w+)*)`)
-	matches := re.FindAllStringSubmatch(question, -1)
-
-	answers := make(map[string]string)
-	for _, match := range matches {
-		answers[match[1]] = match[2]
-	}
-
-	return answers
-}
-
-// Parse answer
-func parseAnswer(question string) string {
-	re := regexp.MustCompile(`\w+\s*Answer:? ([A-D])\)?`)
-
-	match := re.FindStringSubmatch(question)
-	if len(match) > 0 {
-		return match[1]
-	}
-
-	return ""
 }
 
 // validate answer

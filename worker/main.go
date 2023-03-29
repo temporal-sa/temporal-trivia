@@ -7,7 +7,8 @@ import (
 	"crypto/x509"
 	"os"
 
-	triviagame "github.com/ktenzer/temporal-trivia"
+	workflow "github.com/ktenzer/temporal-trivia"
+	activities "github.com/ktenzer/temporal-trivia/activities"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 )
@@ -71,9 +72,9 @@ func main() {
 
 	w := worker.New(c, "trivia-game", worker.Options{})
 
-	w.RegisterWorkflow(triviagame.Workflow)
-	w.RegisterActivity(triviagame.TriviaQuestionActivity)
-	w.RegisterActivity(triviagame.ScoreTotalActivity)
+	w.RegisterWorkflow(workflow.TriviaGameWorkflow)
+	w.RegisterActivity(activities.TriviaQuestionActivity)
+	w.RegisterActivity(activities.LeaderBoardActivity)
 
 	err = w.Run(worker.InterruptCh())
 	if err != nil {

@@ -59,6 +59,12 @@ func main() {
 		log.Fatalln("Error sending the Query", err)
 	}
 	fmt.Println(scoreMap)
+
+	gameProgress, err := SendQuery(c, workflowId, "getProgress")
+	if err != nil {
+		log.Fatalln("Error sending the Query", err)
+	}
+	fmt.Println(gameProgress)
 }
 
 func SendQuery(c client.Client, workflowId, query string) (interface{}, error) {

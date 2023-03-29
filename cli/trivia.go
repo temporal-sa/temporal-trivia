@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"reflect"
 	"regexp"
 	"sort"
 	"time"
@@ -25,6 +24,7 @@ func main() {
 	optStartGame := getopt.BoolLong("start-game", 's', "", "Start a new game")
 	optGameCategory := getopt.StringLong("category", 'c', "", "Game category general|sports|movies|geography|etc")
 	optNumberOfQuestions := getopt.IntLong("questions", 'q', 5, "Total number of questions")
+	optQuestionTimeout := getopt.IntLong("timeout", 't', 5, "Time limit per question")
 	optChatGptKey := getopt.StringLong("chatgpt-key", 'h', "", "Chatgpt API Key")
 	optMtlsCert := getopt.StringLong("mtls-cert", 'm', "", "Path to mtls cert /path/to/ca.pem")
 	optMtlsKey := getopt.StringLong("mtls-key", 'k', "", "Path to mtls key /path/to/ca.key")
@@ -63,6 +63,12 @@ func main() {
 			questions = 5
 		} else {
 			questions = *optNumberOfQuestions
+		}
+
+		if getopt.IsSet("timeout") != true {
+			timeout = 60
+		} else {
+			timeout = *optQuestionTimeout
 		}
 
 		if os.Getenv("TEMPORAL_TRIVIA_CHATGPT_KEY") != "" {
@@ -123,10 +129,20 @@ func main() {
 		c := getTemporalClient(temporalEndpoint, temporalNamespace, mtlsCert, mtlsKey, category, questions, timeout)
 		defer c.Close()
 
-		workflowId := startGame(c, chatGptKey, category, questions)
+		workflowId := startGame(c, chatGptKey, category, timeout, questions)
 
 		for i := 0; i < questions; i++ {
 			for {
+				gameProgress, err := sendProgressQuery(c, workflowId, "getProgress")
+				if err != nil {
+					log.Fatalln("Error sending the Query", err)
+				}
+
+				if gameProgress.CurrentQuestion > i {
+					fmt.Println("Time is up next question...")
+					break
+				}
+
 				gameMap, err := sendGameQuery(c, workflowId, "getDetails")
 				if err != nil {
 					log.Fatalln("Error sending the Query", err)
@@ -135,14 +151,7 @@ func main() {
 				if gameMap[i].Question != "" {
 					fmt.Println(gameMap[i].Question)
 					answer := getPlayerResponse()
-					for {
-						if !validateAnswer(answer) {
-							fmt.Println("Invalid answer must be a, b, c or d")
-							answer = getPlayerResponse()
-						} else {
-							break
-						}
-					}
+
 					gameSignal := resources.Signal{
 						Action: "Answer",
 						Player: "solo",
@@ -206,7 +215,7 @@ func getTemporalClient(optTemporalEndpoint, optTemporalNamespace, optMtlsCert, o
 	return c
 }
 
-func startGame(c client.Client, chatGptKey, category string, questions int) string {
+func startGame(c client.Client, chatGptKey, category string, timeout, questions int) string {
 	workflowOptions := client.StartWorkflowOptions{
 		ID:        "trivia_game_" + uuid.New().String(),
 		TaskQueue: "trivia-game",
@@ -218,10 +227,10 @@ func startGame(c client.Client, chatGptKey, category string, questions int) stri
 		Category:          category,
 		NumberOfQuestions: questions,
 		NumberOfPlayers:   1,
-		QuestionTimeLimit: 1000,
+		QuestionTimeLimit: timeout,
 	}
 
-	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, triviagame.Workflow, input)
+	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, triviagame.TriviaGameWorkflow, input)
 	if err != nil {
 		log.Fatalln("Unable to execute workflow", err)
 	}
@@ -281,6 +290,22 @@ func sendScoreQuery(c client.Client, workflowId, query string) (map[string]int, 
 	return result, nil
 }
 
+// send progress query
+func sendProgressQuery(c client.Client, workflowId, query string) (resources.GameProgress, error) {
+	resp, err := c.QueryWorkflow(context.Background(), workflowId, "", query)
+	var result resources.GameProgress
+
+	if err != nil {
+		return result, err
+	}
+
+	if err := resp.Get(&result); err != nil {
+		return result, err
+	}
+
+	return result, nil
+}
+
 func sendSignal(c client.Client, signal resources.Signal, workflowId string) error {
 
 	err := c.SignalWorkflow(context.Background(), workflowId, "", "game-signal", signal)
@@ -291,27 +316,29 @@ func sendSignal(c client.Client, signal resources.Signal, workflowId string) err
 	return nil
 }
 
-func convertToMap(gameMap interface{}) {
-	iter := reflect.ValueOf(gameMap).MapRange()
-	for iter.Next() {
-		key := iter.Key().Interface()
-		value := iter.Value().Interface()
-		fmt.Println("HERE1")
-		fmt.Println(key)
-		fmt.Println("HERE2")
-		fmt.Println(value)
-	}
-}
-
 func getPlayerResponse() string {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("Answer: ")
+
 	answer, err := reader.ReadString('\n')
 	if err != nil {
 		log.Fatal("Error reading input:", err)
 	}
-
 	answer = answer[:len(answer)-1]
+
+	for {
+		if !validateAnswer(answer) {
+			fmt.Println("Invalid answer must be a, b, c or d")
+			fmt.Print("Answer: ")
+			answer, err = reader.ReadString('\n')
+			if err != nil {
+				log.Fatal("Error reading input:", err)
+			}
+			answer = answer[:len(answer)-1]
+		} else {
+			break
+		}
+	}
 
 	return answer
 }

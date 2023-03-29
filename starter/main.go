@@ -85,7 +85,7 @@ func main() {
 		QuestionTimeLimit: 60,
 	}
 
-	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, triviagame.Workflow, input)
+	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, triviagame.TriviaGameWorkflow, input)
 	if err != nil {
 		log.Fatalln("Unable to execute workflow", err)
 	}

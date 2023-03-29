@@ -2,7 +2,7 @@ package triviagame
 
 import (
 	"context"
-	"strconv"
+	"regexp"
 	"strings"
 	"time"
 
@@ -14,7 +14,7 @@ import (
 	_ "go.temporal.io/sdk/contrib/tools/workflowcheck/determinism"
 )
 
-func TriviaQuestionActivity(ctx context.Context, input resources.ActivityInput) ([]string, error) {
+func TriviaQuestionActivity(ctx context.Context, input resources.ActivityInput) (map[int]resources.Result, error) {
 	logger := activity.GetLogger(ctx)
 
 	logger.Info("TriviaQuestionActivity")
@@ -57,25 +57,57 @@ func TriviaQuestionActivity(ctx context.Context, input resources.ActivityInput) 
 		time.Sleep(time.Duration(1) * time.Second)
 	}
 
-	return questions, nil
+	gameMap := populateGameMap(questions)
+	return gameMap, nil
 }
 
-func ScoreTotalActivity(ctx context.Context, scoreboardMap map[string]int) ([]string, error) {
-	logger := activity.GetLogger(ctx)
+// populate gameMap
+func populateGameMap(questions []string) map[int]resources.Result {
+	gameMap := make(map[int]resources.Result)
+	for i, question := range questions {
+		var result resources.Result
+		correctAnswer := parseCorrectAnswer(question)
+		result.Answer = correctAnswer
 
-	logger.Info("ScoreTotalActivity")
+		result.Question = parseQuestion(question)
 
-	var highestScore int
-	var playersWithHighestScore []string
-
-	for player, score := range scoreboardMap {
-		if score > highestScore {
-			highestScore = score
-			playersWithHighestScore = []string{player + ":" + strconv.Itoa(highestScore)}
-		} else if score == highestScore {
-			playersWithHighestScore = append(playersWithHighestScore, player+":"+strconv.Itoa(highestScore))
-		}
+		answersMap := parsePossibleAnswers(question)
+		result.MultipleChoiceMap = answersMap
+		gameMap[i] = result
 	}
 
-	return playersWithHighestScore, nil
+	return gameMap
+}
+
+// Parse the question
+func parseQuestion(question string) string {
+	re := regexp.MustCompile(`\n[^\n]*$`)
+	removedAnswer := re.ReplaceAllString(question, "")
+
+	return removedAnswer
+}
+
+// Parse the possible answers
+func parsePossibleAnswers(question string) map[string]string {
+	re := regexp.MustCompile(`([A-Z])\) (\w+(?: \w+)*)`)
+	matches := re.FindAllStringSubmatch(question, -1)
+
+	answers := make(map[string]string)
+	for _, match := range matches {
+		answers[match[1]] = match[2]
+	}
+
+	return answers
+}
+
+// Parse answer
+func parseCorrectAnswer(question string) string {
+	re := regexp.MustCompile(`\w+\s*Answer:? ([A-D])\)?`)
+
+	match := re.FindStringSubmatch(question)
+	if len(match) > 0 {
+		return match[1]
+	}
+
+	return ""
 }

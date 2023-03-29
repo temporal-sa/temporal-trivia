@@ -16,7 +16,7 @@ import (
 // Trivia game workflow definition
 func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error {
 	ao := workflow.ActivityOptions{
-		StartToCloseTimeout: 10 * time.Second,
+		StartToCloseTimeout: 100 * time.Second,
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
@@ -47,43 +47,45 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 		return err
 	}
 
-	// Loop through the number of questions
-	for q := 0; q < workflowInput.NumberOfQuestions; q++ {
+	// pre-fetch trivia questions
+	var triviaQuestions []string
+	activityInput := resources.ActivityInput{
+		Key:               workflowInput.Key,
+		Category:          workflowInput.Category,
+		NumberOfQuestions: workflowInput.NumberOfQuestions,
+	}
 
+	err = workflow.ExecuteActivity(ctx, TriviaQuestionActivity, activityInput).Get(ctx, &triviaQuestions)
+	if err != nil {
+		logger.Error("Activity failed.", "Error", err)
+		return err
+	}
+
+	// populate gameMap
+	for i, question := range triviaQuestions {
 		var result resources.Result
-		var triviaQuestion string
-
-		activityInput := resources.ActivityInput{
-			Key:      workflowInput.Key,
-			Question: "Give me a different " + workflowInput.Category + " trivia question that starts with what is and has 4 possible answers A), B), C), or D)? Please provide a newline after the question. Give the correct Answer letter at the end.",
-		}
-
-		err := workflow.ExecuteActivity(ctx, TriviaQuestionActivity, activityInput).Get(ctx, &triviaQuestion)
-		if err != nil {
-			logger.Error("Activity failed.", "Error", err)
-			return err
-		}
-
-		// Start timer based on question time limit of game
-		timer := workflow.NewTimer(ctx, time.Duration(workflowInput.QuestionTimeLimit)*time.Second)
-
-		logger.Info("Trivia question", "result", triviaQuestion)
-
-		correctAnswer := parseAnswer(triviaQuestion)
+		correctAnswer := parseAnswer(question)
 		result.Answer = correctAnswer
-		result.Question = parseQuestion(triviaQuestion)
-		fmt.Println("HERE \n" + result.Question)
-		gameMap[q] = result
 
-		answersMap := parsePossibleAnswers(triviaQuestion)
+		result.Question = parseQuestion(question)
+
+		answersMap := parsePossibleAnswers(question)
 		result.MultipleChoiceMap = answersMap
+		gameMap[i] = result
+	}
 
-		var signal resources.Signal
-		signalChan := workflow.GetSignalChannel(ctx, "game-signal")
-		selector := workflow.NewSelector(ctx)
-		selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, more bool) {
-			channel.Receive(ctx, &signal)
-		})
+	var signal resources.Signal
+	signalChan := workflow.GetSignalChannel(ctx, "game-signal")
+	selector := workflow.NewSelector(ctx)
+	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, more bool) {
+		channel.Receive(ctx, &signal)
+	})
+
+	// loop through questions, start timer
+	for key, _ := range triviaQuestions {
+		result := gameMap[key]
+
+		timer := workflow.NewTimer(ctx, time.Duration(workflowInput.QuestionTimeLimit)*time.Second)
 
 		var timerFired bool = false
 		selector.AddFuture(timer, func(f workflow.Future) {
@@ -94,12 +96,9 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 			}
 		})
 
-		// Loop through the players we expect to answer and break loop if question timer expires
+		// Loop through the number of players we expect to answer and break loop if question timer expires
 		var submissionsMap = make(map[string]resources.Submission)
-
 		for a := 0; a < workflowInput.NumberOfPlayers; a++ {
-			var submission resources.Submission
-
 			// continue to next question if timer fires
 			if timerFired {
 				continue
@@ -108,19 +107,22 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 			}
 
 			// handle duplicate answers from same player
-			if signal.Action == "Answer" && !isAnswerDuplicate(gameMap[q].Submissions, signal.Player) {
+			var submission resources.Submission
+			if signal.Action == "Answer" && !isAnswerDuplicate(result.Submissions, signal.Player) {
 				// if we don't receive valid answer mark as wrong and continue
 				if !validateAnswer(signal.Answer) {
 					submission.IsCorrect = false
 					submission.Answer = signal.Answer
+					submissionsMap[signal.Player] = submission
 					continue
 				}
 
 				// ensure answer is upper case
 				answerUpperCase := strings.ToUpper(signal.Answer)
-				if result.Answer == answerUpperCase {
+				submission.Answer = answerUpperCase
+
+				if result.Answer == submission.Answer {
 					submission.IsCorrect = true
-					submission.Answer = signal.Answer
 
 					if result.Winner == "" {
 						result.Winner = signal.Player
@@ -132,7 +134,6 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 					}
 				} else {
 					submission.IsCorrect = false
-					submission.Answer = signal.Answer
 
 					// add player to scoreboard if they don't exist
 					_, ok := scoreboardMap[signal.Player]
@@ -142,26 +143,17 @@ func Workflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error
 				}
 				submissionsMap[signal.Player] = submission
 				result.Submissions = submissionsMap
-				gameMap[q] = result
 			} else {
 				logger.Warn("Incorrect signal received", signal)
 				a--
 			}
+			gameMap[key] = result
 		}
-		gameMap[q] = result
-		fmt.Println("GAME MAP: ", gameMap)
-		fmt.Println("SCORE MAP: ", scoreboardMap)
 	}
 
-	// Output final score via activity
-	var winners []string
-	err = workflow.ExecuteActivity(ctx, ScoreTotalActivity, scoreboardMap).Get(ctx, &winners)
-	if err != nil {
-		logger.Error("Activity failed.", "Error", err)
-		return err
-	}
+	fmt.Println("GAME MAP: ", gameMap)
+	fmt.Println("SCORE MAP: ", scoreboardMap)
 
-	logger.Info("The winners are...", winners)
 	return nil
 }
 

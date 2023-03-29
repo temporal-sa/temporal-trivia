@@ -10,8 +10,9 @@ type WorkflowInput struct {
 }
 
 type ActivityInput struct {
-	Key      string `json:"key"`
-	Question string `json:"question"`
+	Key               string `json:"key"`
+	Category          string `json:"category"`
+	NumberOfQuestions int    `json:"question"`
 }
 
 type Signal struct {

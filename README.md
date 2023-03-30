@@ -32,6 +32,19 @@ export TEMPORAL_TRIVIA_ANSWER="A"
 $ git clone https://github.com/ktenzer/temporal-trivia.git
 </pre>
 
+## Game Scoring
+Players will get two points for being the first to get a right answer and one point for getting the right answer but not being first. Final scores will revealed after the game completes.
+
+## Game Rules
+Each game can be configured with its own rules. Whoever starts the game sets the rules. This is done as a workflow input.
+
+<pre>
+Category:          "General",
+NumberOfQuestions: 3,
+NumberOfPlayers:   2,
+QuestionTimeLimit: 60,
+</pre>
+
 ## Play the game
 Ensure you are exporting the environment variables.
 <pre>

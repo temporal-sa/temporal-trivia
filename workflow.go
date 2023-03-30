@@ -3,7 +3,6 @@ package triviagame
 import (
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -105,9 +104,8 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 			// continue to next question if timer fires
 			if timerFired {
 				break
-			} else {
-				selector.Select(ctx)
 			}
+			selector.Select(ctx)
 
 			// handle duplicate answers from same player
 			var submission resources.Submission
@@ -161,10 +159,6 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 	if err != nil {
 		logger.Error("Activity failed.", "Error", err)
 		return err
-	}
-
-	for _, sb := range scoreboard {
-		logger.Info("\n----- Leader Board -----\n" + "-- Player -- -- Score --\n" + sb.Player + "\t\t" + strconv.Itoa(sb.Score) + "\n")
 	}
 
 	return nil

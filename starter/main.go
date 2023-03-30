@@ -79,7 +79,7 @@ func main() {
 	// Set input
 	input := resources.WorkflowInput{
 		Category:          "General",
-		NumberOfQuestions: 2,
+		NumberOfQuestions: 3,
 		NumberOfPlayers:   2,
 		QuestionTimeLimit: 60,
 	}

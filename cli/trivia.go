@@ -65,7 +65,7 @@ func main() {
 		}
 
 		if getopt.IsSet("timeout") != true {
-			timeout = 60
+			timeout = 1000
 		} else {
 			timeout = *optQuestionTimeout
 		}
@@ -155,6 +155,7 @@ func main() {
 					fmt.Println("Correct Answer: " + gameMap[i].Answer)
 					i++
 					break
+
 				}
 
 				time.Sleep(time.Duration(1) * time.Second)

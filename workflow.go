@@ -104,7 +104,7 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 		for a := 0; a < workflowInput.NumberOfPlayers; a++ {
 			// continue to next question if timer fires
 			if timerFired {
-				continue
+				break
 			} else {
 				selector.Select(ctx)
 			}

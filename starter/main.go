@@ -76,9 +76,8 @@ func main() {
 		TaskQueue: "trivia-game",
 	}
 
-	// Set ChatGPT API Key
+	// Set input
 	input := resources.WorkflowInput{
-		Key:               os.Getenv("CHATGPT_API_KEY"),
 		Category:          "General",
 		NumberOfQuestions: 2,
 		NumberOfPlayers:   2,

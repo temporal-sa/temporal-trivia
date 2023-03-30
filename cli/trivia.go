@@ -25,7 +25,6 @@ func main() {
 	optGameCategory := getopt.StringLong("category", 'c', "", "Game category general|sports|movies|geography|etc")
 	optNumberOfQuestions := getopt.IntLong("questions", 'q', 5, "Total number of questions")
 	optQuestionTimeout := getopt.IntLong("timeout", 't', 5, "Time limit per question")
-	optChatGptKey := getopt.StringLong("chatgpt-key", 'h', "", "Chatgpt API Key")
 	optMtlsCert := getopt.StringLong("mtls-cert", 'm', "", "Path to mtls cert /path/to/ca.pem")
 	optMtlsKey := getopt.StringLong("mtls-key", 'k', "", "Path to mtls key /path/to/ca.key")
 	optTemporalEndpoint := getopt.StringLong("temporal-endpoint", 'e', "", "The temporal namespace endpoint")
@@ -69,17 +68,6 @@ func main() {
 			timeout = 60
 		} else {
 			timeout = *optQuestionTimeout
-		}
-
-		if os.Getenv("TEMPORAL_TRIVIA_CHATGPT_KEY") != "" {
-			chatGptKey = os.Getenv("TEMPORAL_TRIVIA_CHATGPT_KEY")
-		} else {
-			if getopt.IsSet("chatgpt-key") == true {
-				chatGptKey = *optChatGptKey
-			} else {
-				fmt.Println("[ERROR] Missing parameter --chatgpt-key")
-				os.Exit(1)
-			}
 		}
 
 		if os.Getenv("TEMPORAL_TRIVIA_MTLS_CERT") != "" {
@@ -131,7 +119,7 @@ func main() {
 
 		workflowId := startGame(c, chatGptKey, category, timeout, questions)
 
-		for i := 0; i < questions; i++ {
+		for i := 0; i < questions; {
 			for {
 				gameProgress, err := sendProgressQuery(c, workflowId, "getProgress")
 				if err != nil {
@@ -140,6 +128,7 @@ func main() {
 
 				if gameProgress.CurrentQuestion > i {
 					fmt.Println("Time is up next question...")
+					i++
 					break
 				}
 
@@ -164,11 +153,10 @@ func main() {
 					}
 
 					fmt.Println("Correct Answer: " + gameMap[i].Answer)
-				}
-
-				if len(gameMap) > i {
+					i++
 					break
 				}
+
 				time.Sleep(time.Duration(1) * time.Second)
 			}
 		}
@@ -223,7 +211,6 @@ func startGame(c client.Client, chatGptKey, category string, timeout, questions 
 
 	// Set ChatGPT API Key
 	input := resources.WorkflowInput{
-		Key:               chatGptKey,
 		Category:          category,
 		NumberOfQuestions: questions,
 		NumberOfPlayers:   1,

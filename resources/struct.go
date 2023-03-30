@@ -1,7 +1,6 @@
 package resources
 
 type WorkflowInput struct {
-	Key               string `json:"key"`
 	Category          string `json:"category"`
 	NumberOfQuestions int    `json:"numberOfQuestions"`
 	NumberOfPlayers   int    `json:"numberOfPlayers"`

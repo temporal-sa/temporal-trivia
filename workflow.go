@@ -1,6 +1,7 @@
 package triviagame
 
 import (
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -62,7 +63,7 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 
 	// set activity inputs for starting game
 	activityInput := resources.ActivityInput{
-		Key:               workflowInput.Key,
+		Key:               os.Getenv("CHATGPT_API_KEY"),
 		Category:          workflowInput.Category,
 		NumberOfQuestions: workflowInput.NumberOfQuestions,
 	}
@@ -82,8 +83,8 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 	})
 
 	// loop through questions, start timer
+	var questionCount int = 0
 	for key, _ := range gameMap {
-		gameProgress.CurrentQuestion = key + 1
 		timer := workflow.NewTimer(ctx, time.Duration(workflowInput.QuestionTimeLimit)*time.Second)
 
 		var timerFired bool = false
@@ -98,6 +99,8 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 		// Loop through the number of players we expect to answer and break loop if question timer expires
 		result := gameMap[key]
 		var submissionsMap = make(map[string]resources.Submission)
+		gameProgress.CurrentQuestion = questionCount
+
 		for a := 0; a < workflowInput.NumberOfPlayers; a++ {
 			// continue to next question if timer fires
 			if timerFired {
@@ -148,6 +151,7 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 				a--
 			}
 			gameMap[key] = result
+			questionCount++
 		}
 	}
 

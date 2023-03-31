@@ -8,7 +8,7 @@ RUN go install . ./worker
 
 FROM docker.io/alpine:latest
 LABEL ios.k8s.display-name="backup-worker" \
-    maintainer="Keith Tenzer <ktenzer@redhat.com>"
+    maintainer="Keith Tenzer <keith.tenzer@temporal.io>"
 
 RUN mkdir -p /app/bin
 WORKDIR /app/bin

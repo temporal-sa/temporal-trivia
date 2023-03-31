@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/build: "1"
     app.kubernetes.io/component: worker
     app.kubernetes.io/name: temporal-trivia
-    app.kubernetes.io/version: v1.0
+    app.kubernetes.io/version: v1.1
   name: temporal-trivia
 spec:
   progressDeadlineSeconds: 600

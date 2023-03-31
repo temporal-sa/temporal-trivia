@@ -119,11 +119,15 @@ func main() {
 
 		workflowId := startGame(c, chatGptKey, category, timeout, questions)
 
+		failureCounter := 0
 		for i := 0; i < questions; {
 			for {
+				if failureCounter > 10 {
+					log.Fatalln("Error exceeded number of failures")
+				}
 				gameProgress, err := sendProgressQuery(c, workflowId, "getProgress")
 				if err != nil {
-					log.Fatalln("Error sending the Query", err)
+					fmt.Println("Error sending the Query", err)
 				}
 
 				if gameProgress.CurrentQuestion > i {
@@ -134,7 +138,7 @@ func main() {
 
 				gameMap, err := sendGameQuery(c, workflowId, "getDetails")
 				if err != nil {
-					log.Fatalln("Error sending the Query", err)
+					fmt.Println("Error sending the Query", err)
 				}
 
 				if gameMap[i].Question != "" {
@@ -149,7 +153,7 @@ func main() {
 
 					err = sendSignal(c, gameSignal, workflowId)
 					if err != nil {
-						log.Fatalln("Error sending the Signal", err)
+						fmt.Println("Error sending the Signal", err)
 					}
 
 					fmt.Println("Correct Answer: " + gameMap[i].Answer)

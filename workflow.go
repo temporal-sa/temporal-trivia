@@ -8,6 +8,7 @@ import (
 
 	activities "github.com/ktenzer/temporal-trivia/activities"
 	"github.com/ktenzer/temporal-trivia/resources"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
 	_ "go.temporal.io/sdk/contrib/tools/workflowcheck/determinism"
@@ -15,8 +16,17 @@ import (
 
 // Trivia game workflow definition
 func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error {
+
+	// activity options
 	ao := workflow.ActivityOptions{
-		StartToCloseTimeout: 100 * time.Second,
+		StartToCloseTimeout: 300 * time.Second,
+		HeartbeatTimeout:    10 * time.Second,
+		RetryPolicy: &temporal.RetryPolicy{
+			InitialInterval:    time.Second,
+			BackoffCoefficient: 2.0,
+			MaximumInterval:    time.Minute,
+			MaximumAttempts:    5,
+		},
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 

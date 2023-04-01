@@ -83,9 +83,9 @@ func populateGameMap(questions []string) map[int]resources.Result {
 		result.Answer = correctAnswer
 
 		result.Question = parseQuestion(question)
-
 		answersMap := parsePossibleAnswers(question)
 		result.MultipleChoiceMap = answersMap
+
 		gameMap[i] = result
 	}
 
@@ -94,10 +94,15 @@ func populateGameMap(questions []string) map[int]resources.Result {
 
 // Parse the question
 func parseQuestion(question string) string {
-	re := regexp.MustCompile(`\n[^\n]*$`)
-	removedAnswer := re.ReplaceAllString(question, "")
+	questionRegex := regexp.MustCompile(`^(.*?\?)\s*\nA\)|B\)|C\)|D\)`)
+	match := questionRegex.FindStringSubmatch(question)
 
-	return removedAnswer
+	var parsedQuestion string
+	if len(match) > 1 {
+		parsedQuestion = match[1]
+	}
+
+	return parsedQuestion
 }
 
 // Parse the possible answers

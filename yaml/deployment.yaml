@@ -46,6 +46,16 @@ spec:
           value: /etc/certs/tls.key
         image: ktenzer/temporal-trivia:v1.0
         imagePullPolicy: Always
+        readinessProbe:
+          exec:
+            command:
+            - ls
+            - /
+          failureThreshold: 3
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 1          
         livenessProbe:
           exec:
             command:

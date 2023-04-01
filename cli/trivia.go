@@ -143,6 +143,10 @@ func main() {
 
 				if gameMap[i].Question != "" {
 					fmt.Println(gameMap[i].Question)
+					for key, value := range gameMap[i].MultipleChoiceMap {
+						fmt.Println(key + " " + value)
+					}
+
 					answer := getPlayerResponse()
 
 					gameSignal := resources.Signal{
@@ -157,6 +161,7 @@ func main() {
 					}
 
 					fmt.Println("Correct Answer: " + gameMap[i].Answer)
+					fmt.Println("\n")
 					i++
 					break
 

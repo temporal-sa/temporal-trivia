@@ -24,7 +24,8 @@ func main() {
 	optStartGame := getopt.BoolLong("start-game", 's', "", "Start a new game")
 	optGameCategory := getopt.StringLong("category", 'c', "", "Game category general|sports|movies|geography|etc")
 	optNumberOfQuestions := getopt.IntLong("questions", 'q', 5, "Total number of questions")
-	optQuestionTimeout := getopt.IntLong("timeout", 't', 5, "Time limit per question")
+	optAnswerTimeout := getopt.IntLong("answer-timeout", 't', 5, "Time limit per answer phase")
+	optResultTimeout := getopt.IntLong("result-timeout", 'r', 5, "Time limit per result phase")
 	optMtlsCert := getopt.StringLong("mtls-cert", 'm', "", "Path to mtls cert /path/to/ca.pem")
 	optMtlsKey := getopt.StringLong("mtls-key", 'k', "", "Path to mtls key /path/to/ca.key")
 	optTemporalEndpoint := getopt.StringLong("temporal-endpoint", 'e', "", "The temporal namespace endpoint")
@@ -44,7 +45,8 @@ func main() {
 	}
 
 	var category string
-	var timeout int
+	var answerTimeout int
+	var resultTimeout int
 	var questions int
 	var chatGptKey string
 	var mtlsCert string
@@ -64,10 +66,16 @@ func main() {
 			questions = *optNumberOfQuestions
 		}
 
-		if getopt.IsSet("timeout") != true {
-			timeout = 1000
+		if getopt.IsSet("answer-timeout") != true {
+			answerTimeout = 1000
 		} else {
-			timeout = *optQuestionTimeout
+			answerTimeout = *optAnswerTimeout
+		}
+
+		if getopt.IsSet("result-timeout") != true {
+			resultTimeout = 10
+		} else {
+			resultTimeout = *optResultTimeout
 		}
 
 		if os.Getenv("TEMPORAL_TRIVIA_MTLS_CERT") != "" {
@@ -108,10 +116,10 @@ func main() {
 			}
 		}
 
-		c := getTemporalClient(temporalEndpoint, temporalNamespace, mtlsCert, mtlsKey, category, questions, timeout)
+		c := getTemporalClient(temporalEndpoint, temporalNamespace, mtlsCert, mtlsKey)
 		defer c.Close()
 
-		workflowId := startGame(c, chatGptKey, category, timeout, questions)
+		workflowId := startGame(c, chatGptKey, category, answerTimeout, resultTimeout, questions)
 
 		failureCounter := 0
 		for i := 0; i < questions; {
@@ -163,11 +171,12 @@ func main() {
 					fmt.Println("Correct Answer: " + gameMap[i].Answer)
 					fmt.Println("\n")
 					i++
+
+					// sleep for showing results
+					time.Sleep(time.Duration(resultTimeout) * time.Second)
 					break
 
 				}
-
-				time.Sleep(time.Duration(1) * time.Second)
 			}
 		}
 		scoreMap, err := sendScoreQuery(c, workflowId, "getScore")
@@ -186,7 +195,7 @@ func main() {
 	}
 }
 
-func getTemporalClient(optTemporalEndpoint, optTemporalNamespace, optMtlsCert, optMtlsKey, category string, questions, timeout int) client.Client {
+func getTemporalClient(optTemporalEndpoint, optTemporalNamespace, optMtlsCert, optMtlsKey string) client.Client {
 	clientOptions := client.Options{
 		HostPort:  optTemporalEndpoint,
 		Namespace: optTemporalNamespace,
@@ -213,7 +222,7 @@ func getTemporalClient(optTemporalEndpoint, optTemporalNamespace, optMtlsCert, o
 	return c
 }
 
-func startGame(c client.Client, chatGptKey, category string, timeout, questions int) string {
+func startGame(c client.Client, chatGptKey, category string, answerTimeout, resultTimeout, questions int) string {
 	workflowOptions := client.StartWorkflowOptions{
 		ID:        "trivia_game_" + uuid.New().String(),
 		TaskQueue: "trivia-game",
@@ -224,7 +233,8 @@ func startGame(c client.Client, chatGptKey, category string, timeout, questions 
 		Category:          category,
 		NumberOfQuestions: questions,
 		NumberOfPlayers:   1,
-		QuestionTimeLimit: timeout,
+		AnswerTimeLimit:   answerTimeout,
+		ResultTimeLimit:   resultTimeout,
 	}
 
 	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, triviagame.TriviaGameWorkflow, input)

@@ -94,13 +94,18 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 	// loop through questions, start timer
 	var questionCount int = 0
 	for key, _ := range gameMap {
-		timer := workflow.NewTimer(ctx, time.Duration(workflowInput.QuestionTimeLimit)*time.Second)
+		gameProgress.CurrentQuestion = questionCount + 1
+
+		// Set answer phase
+		gameProgress.Stage = "answer"
+		// Async timer for amount of time to receive answers
+		timer := workflow.NewTimer(ctx, time.Duration(workflowInput.AnswerTimeLimit)*time.Second)
 
 		var timerFired bool = false
 		selector.AddFuture(timer, func(f workflow.Future) {
 			err := f.Get(ctx, nil)
 			if err == nil {
-				logger.Info("Time limit for question has exceeded the limit of " + time.Duration(workflowInput.QuestionTimeLimit).String() + " seconds")
+				logger.Info("Time limit for question has exceeded the limit of " + time.Duration(workflowInput.AnswerTimeLimit).String() + " seconds")
 				timerFired = true
 			}
 		})
@@ -108,7 +113,6 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 		// Loop through the number of players we expect to answer and break loop if question timer expires
 		result := gameMap[key]
 		var submissionsMap = make(map[string]resources.Submission)
-		gameProgress.CurrentQuestion = questionCount + 1
 
 		for a := 0; a < workflowInput.NumberOfPlayers; a++ {
 			// continue to next question if timer fires
@@ -160,6 +164,11 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 			}
 			gameMap[key] = result
 		}
+		// Set result stage
+		gameProgress.Stage = "result"
+		// Sleep allowing time to display answers
+		workflow.Sleep(ctx, time.Duration(workflowInput.ResultTimeLimit)*time.Second)
+
 		questionCount++
 	}
 

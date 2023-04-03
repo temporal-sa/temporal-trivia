@@ -5,7 +5,8 @@ type WorkflowInput struct {
 	NumberOfQuestions int    `json:"numberOfQuestions"`
 	NumberOfPlayers   int    `json:"numberOfPlayers"`
 	NumberOfAnswers   int    `json:"numberOfAnswer"`
-	QuestionTimeLimit int    `json:"questionTimeLimit"`
+	AnswerTimeLimit   int    `json:"answerTimeLimit"`
+	ResultTimeLimit   int    `json:"resultTimeLimit"`
 }
 
 type ActivityInput struct {
@@ -34,8 +35,9 @@ type Submission struct {
 }
 
 type GameProgress struct {
-	NumberOfQuestions int `json:"numberOfQuestions"`
-	CurrentQuestion   int `json:"currentQuestion"`
+	NumberOfQuestions int    `json:"numberOfQuestions"`
+	CurrentQuestion   int    `json:"currentQuestion"`
+	Stage             string `json:"stage"`
 }
 
 type ScoreBoard struct {

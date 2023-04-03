@@ -75,9 +75,6 @@ func main() {
 		} else {
 			if getopt.IsSet("mtls-cert") == true {
 				mtlsCert = *optMtlsCert
-			} else {
-				fmt.Println("[ERROR] Missing parameter --mtls-cert")
-				os.Exit(1)
 			}
 		}
 
@@ -86,9 +83,6 @@ func main() {
 		} else {
 			if getopt.IsSet("mtls-key") == true {
 				mtlsKey = *optMtlsKey
-			} else {
-				fmt.Println("[ERROR] Missing parameter --mtls-key")
-				os.Exit(1)
 			}
 		}
 
@@ -130,7 +124,7 @@ func main() {
 					fmt.Println("Error sending the Query", err)
 				}
 
-				if gameProgress.CurrentQuestion > i {
+				if gameProgress.CurrentQuestion > i+1 {
 					fmt.Println("Time is up next question...")
 					i++
 					break
@@ -143,8 +137,14 @@ func main() {
 
 				if gameMap[i].Question != "" {
 					fmt.Println(gameMap[i].Question)
-					for key, value := range gameMap[i].MultipleChoiceMap {
-						fmt.Println(key + " " + value)
+					keys := make([]string, 0, len(gameMap[i].MultipleChoiceMap))
+					for k := range gameMap[i].MultipleChoiceMap {
+						//fmt.Println(key + " " + value)
+						keys = append(keys, k)
+					}
+					sort.Strings(keys)
+					for _, k := range keys {
+						fmt.Println(k + " " + gameMap[i].MultipleChoiceMap[k])
 					}
 
 					answer := getPlayerResponse()

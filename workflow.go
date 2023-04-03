@@ -108,7 +108,7 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 		// Loop through the number of players we expect to answer and break loop if question timer expires
 		result := gameMap[key]
 		var submissionsMap = make(map[string]resources.Submission)
-		gameProgress.CurrentQuestion = questionCount
+		gameProgress.CurrentQuestion = questionCount + 1
 
 		for a := 0; a < workflowInput.NumberOfPlayers; a++ {
 			// continue to next question if timer fires
@@ -159,8 +159,8 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 				a--
 			}
 			gameMap[key] = result
-			questionCount++
 		}
+		questionCount++
 	}
 
 	// sort scoreboard

@@ -107,7 +107,7 @@ func parseQuestion(question string) string {
 
 // Parse the possible answers
 func parsePossibleAnswers(question string) map[string]string {
-	re := regexp.MustCompile(`([A-Z])\) (\w+(?: \w+)*)`)
+	re := regexp.MustCompile(`([A-Z])\) (\S+(?: \S+)*)`)
 	matches := re.FindAllStringSubmatch(question, -1)
 
 	answers := make(map[string]string)

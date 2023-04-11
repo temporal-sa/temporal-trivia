@@ -2,7 +2,6 @@ package triviagame
 
 import (
 	"os"
-	"regexp"
 	"strings"
 	"time"
 
@@ -124,13 +123,6 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 			// handle duplicate answers from same player
 			var submission resources.Submission
 			if signal.Action == "Answer" && !isAnswerDuplicate(result.Submissions, signal.Player) {
-				// if we don't receive valid answer mark as wrong and continue
-				if !validateAnswer(signal.Answer) {
-					submission.IsCorrect = false
-					submission.Answer = signal.Answer
-					submissionsMap[signal.Player] = submission
-					continue
-				}
 
 				// ensure answer is upper case
 				answerUpperCase := strings.ToUpper(signal.Answer)
@@ -181,14 +173,6 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 	}
 
 	return nil
-}
-
-// validate answer
-func validateAnswer(answer string) bool {
-	re := regexp.MustCompile(`^[A-Da-d]$`)
-	isMatch := re.MatchString(answer)
-
-	return isMatch
 }
 
 // Detect answer duplication

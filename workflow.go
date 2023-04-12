@@ -2,6 +2,7 @@ package triviagame
 
 import (
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -92,7 +93,8 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 
 	// loop through questions, start timer
 	var questionCount int = 0
-	for key, _ := range gameMap {
+	keys := getSortedGameMap(gameMap)
+	for _, key := range keys {
 		gameProgress.CurrentQuestion = questionCount + 1
 
 		// Set answer phase
@@ -105,6 +107,7 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 			err := f.Get(ctx, nil)
 			if err == nil {
 				logger.Info("Time limit for question has exceeded the limit of " + time.Duration(workflowInput.AnswerTimeLimit).String() + " seconds")
+				signal = resources.Signal{}
 				timerFired = true
 			}
 		})
@@ -154,8 +157,10 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 				logger.Warn("Incorrect signal received", signal)
 				a--
 			}
+
 			gameMap[key] = result
 		}
+
 		// Set result stage
 		gameProgress.Stage = "result"
 		// Sleep allowing time to display answers
@@ -183,4 +188,17 @@ func isAnswerDuplicate(submissions map[string]resources.Submission, player strin
 		}
 	}
 	return false
+}
+
+// Sort gameMap
+func getSortedGameMap(gameMap map[int]resources.Result) []int {
+
+	keys := make([]int, 0, len(gameMap))
+	for k := range gameMap {
+		keys = append(keys, k)
+	}
+
+	sort.Ints(keys)
+
+	return keys
 }

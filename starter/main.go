@@ -79,10 +79,10 @@ func main() {
 	// Set input
 	input := resources.WorkflowInput{
 		Category:          "General",
-		NumberOfQuestions: 3,
-		NumberOfPlayers:   2,
-		AnswerTimeLimit:   60,
-		ResultTimeLimit:   30,
+		NumberOfQuestions: 5,
+		NumberOfPlayers:   1,
+		AnswerTimeLimit:   30,
+		ResultTimeLimit:   5,
 	}
 
 	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, triviagame.TriviaGameWorkflow, input)

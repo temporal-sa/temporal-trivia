@@ -1,7 +1,44 @@
 # temporal-trivia
 A trivia game built on temporal
 
-## Setup
+## Deploy in Kubernetes
+
+Build docker file
+<pre>
+$ cd temporal-trivia
+$ docker build -t ktenzer/temporal-trivia:v1.0 .
+</pre>
+
+Push docker file
+<pre>
+$ docker push ktenzer/temporal-trivia:v1.0
+</pre>
+
+Add SSL Certs to Secret
+<pre>
+$ kubectl create secret tls temporal-trivia-tls-secret --key /home/ktenzer/temporal/certs/ca.key --cert /home/ktenzer/temporal/certs/ca.pem -n temporal-trivia
+</pre>
+
+Add ChatGPT Key to Secret
+<pre>
+$ kubectl create secret generic chatgpt-key --from-literal=KEY=chatgptkey -n temporal-trivia
+</pre>
+
+Create Deployment (update the environment parameters before deploying)
+<pre>
+$ kubectl create -f yaml/deployment.yaml
+</pre>
+
+Check Pods
+<pre>
+$ kubectl get pods -n temporal-trivia
+NAME                              READY   STATUS    RESTARTS   AGE
+temporal-trivia-95b98d7d4-5mfj4   1/1     Running   0          23h
+temporal-trivia-95b98d7d4-gscgm   1/1     Running   0          23h
+temporal-trivia-95b98d7d4-mhb7d   1/1     Running   0          23h
+</pre>
+
+## Deploy in Local Environment
 Set the following environment variables. These variables configure the temporal namespace, endpoint and certs. In addition since chatgpt is used, a valid chatgpt API key is also required. You can create a chatgpt API key [here](https://platform.openai.com/account/api-keys).
 
 Client Configuration parameters

@@ -4,9 +4,9 @@ metadata:
   labels:
     app.kubernetes.io/build: "1"
     app.kubernetes.io/component: worker
-    app.kubernetes.io/name: temporal-trivia
+    app.kubernetes.io/name: temporal-trivia-worker
     app.kubernetes.io/version: v1.7
-  name: temporal-trivia
+  name: temporal-trivia-worker
 spec:
   progressDeadlineSeconds: 600
   replicas: 3
@@ -14,7 +14,7 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/component: worker
-      app.kubernetes.io/name: temporal-trivia
+      app.kubernetes.io/name: temporal-trivia-worker
   strategy:
     rollingUpdate:
       maxSurge: 25%
@@ -26,7 +26,7 @@ spec:
       labels:
         app.kubernetes.io/build: "1"
         app.kubernetes.io/component: worker
-        app.kubernetes.io/name: temporal-trivia
+        app.kubernetes.io/name: temporal-trivia-worker
         app.kubernetes.io/version: v1.7
     spec:
       containers:
@@ -66,7 +66,7 @@ spec:
           periodSeconds: 5
           successThreshold: 1
           timeoutSeconds: 1
-        name: temporal-trivia
+        name: temporal-trivia-worker
         resources:
           limits:
             cpu: 500m
@@ -90,5 +90,5 @@ spec:
       - name: certs
         secret:
           defaultMode: 420
-          secretName: temporal-trivia-tls-secret
+          secretName: temporal-trivia-tls
 

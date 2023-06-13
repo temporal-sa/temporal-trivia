@@ -45,7 +45,17 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 	gameProgress.Stage = "start"
 
 	// Setup query handler for gathering game questions
-	err := workflow.SetQueryHandler(ctx, "getQuestions", func(input []byte) (map[int]resources.Result, error) {
+	err := workflow.SetQueryHandler(ctx, "getPlayers", func(input []byte) (map[string]resources.Player, error) {
+		return getPlayers, nil
+	})
+
+	if err != nil {
+		logger.Error("SetQueryHandler failed for getPlayers: " + err.Error())
+		return err
+	}
+
+	// Setup query handler for gathering game questions
+	err = workflow.SetQueryHandler(ctx, "getQuestions", func(input []byte) (map[int]resources.Result, error) {
 		return getQuestions, nil
 	})
 

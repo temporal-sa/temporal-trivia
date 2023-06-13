@@ -11,19 +11,19 @@ import (
 	_ "go.temporal.io/sdk/contrib/tools/workflowcheck/determinism"
 )
 
-func LeaderBoardActivity(ctx context.Context, scoreMap map[string]int) ([]resources.ScoreBoard, error) {
+func LeaderBoardActivity(ctx context.Context, getPlayers map[string]resources.Player) ([]resources.ScoreBoard, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("ScoreTotalActivity")
 
-	scoreboard := sortLeaderBoard(scoreMap)
+	scoreboard := sortLeaderBoard(getPlayers)
 
 	return scoreboard, nil
 }
 
-func sortLeaderBoard(scoreMap map[string]int) []resources.ScoreBoard {
+func sortLeaderBoard(getPlayers map[string]resources.Player) []resources.ScoreBoard {
 	var scoreboard []resources.ScoreBoard
-	for k, v := range scoreMap {
-		scoreboard = append(scoreboard, resources.ScoreBoard{Player: k, Score: v})
+	for k, _ := range getPlayers {
+		scoreboard = append(scoreboard, resources.ScoreBoard{Player: k, Score: getPlayers[k].Score})
 	}
 
 	sort.Slice(scoreboard, func(i, j int) bool {

@@ -30,8 +30,10 @@ type Result struct {
 }
 
 type Submission struct {
+	PlayerId  int    `json:"playerId"`
 	Answer    string `json:"answer"`
 	IsCorrect bool   `json:"isCorrect"`
+	IsFirst   bool   `json:"isFirst"`
 }
 
 type GameProgress struct {
@@ -43,4 +45,10 @@ type GameProgress struct {
 type ScoreBoard struct {
 	Player string `json:"value"`
 	Score  int    `json:"key"`
+}
+
+// New
+type Player struct {
+	Id    int `json:"id"`
+	Score int `json:"score"`
 }

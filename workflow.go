@@ -33,30 +33,24 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Trivia Game Started")
 
-	// Create objects for storing game results, progress and player scoring
-	gameMap := make(map[int]resources.Result)
-	scoreMap := make(map[string]int)
+	// Setup player, question and progress state machines
+	getPlayers := make(map[string]resources.Player)
+	getQuestions := make(map[int]resources.Result)
+
 	var gameProgress resources.GameProgress
 	gameProgress.NumberOfQuestions = workflowInput.NumberOfQuestions
 	gameProgress.CurrentQuestion = 0
 
-	// Setup query handler for gathering game details
-	err := workflow.SetQueryHandler(ctx, "getDetails", func(input []byte) (map[int]resources.Result, error) {
-		return gameMap, nil
+	// Set game progress to start phase
+	gameProgress.Stage = "start"
+
+	// Setup query handler for gathering game questions
+	err := workflow.SetQueryHandler(ctx, "getQuestions", func(input []byte) (map[int]resources.Result, error) {
+		return getQuestions, nil
 	})
 
 	if err != nil {
-		logger.Error("SetQueryHandler failed for gameMap: " + err.Error())
-		return err
-	}
-
-	// Setup query handler for gathering player score
-	err = workflow.SetQueryHandler(ctx, "getScore", func(input []byte) (map[string]int, error) {
-		return scoreMap, nil
-	})
-
-	if err != nil {
-		logger.Error("SetQueryHandler failed for scoreMap: " + err.Error())
+		logger.Error("SetQueryHandler failed for getQuestions: " + err.Error())
 		return err
 	}
 
@@ -66,8 +60,35 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 	})
 
 	if err != nil {
-		logger.Error("SetQueryHandler failed for scoreMap: " + err.Error())
+		logger.Error("SetQueryHandler failed for gameProgress: " + err.Error())
 		return err
+	}
+
+	// Add players to game using signal
+	var addPlayerSignal resources.Signal
+	addPlayerSignalChan := workflow.GetSignalChannel(ctx, "start-game-signal")
+	addPlayerSelector := workflow.NewSelector(ctx)
+	addPlayerSelector.AddReceive(addPlayerSignalChan, func(channel workflow.ReceiveChannel, more bool) {
+		channel.Receive(ctx, &addPlayerSignal)
+	})
+
+	playerCount := 0
+	for {
+		addPlayerSelector.Select(ctx)
+
+		if addPlayerSignal.Action == "Player" && addPlayerSignal.Player != "" {
+			getPlayers[addPlayerSignal.Player] = resources.Player{
+				Id:    playerCount,
+				Score: 0,
+			}
+		}
+
+		playerCount++
+
+		// Wait for start of game via signal
+		if addPlayerSignal.Action == "StartGame" {
+			break
+		}
 	}
 
 	// set activity inputs for starting game
@@ -78,42 +99,43 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 	}
 
 	// run activity to start game and pre-fetch trivia questions and answers
-	err = workflow.ExecuteActivity(ctx, activities.TriviaQuestionActivity, activityInput).Get(ctx, &gameMap)
+	err = workflow.ExecuteActivity(ctx, activities.TriviaQuestionActivity, activityInput).Get(ctx, &getQuestions)
 	if err != nil {
 		logger.Error("Activity failed.", "Error", err)
 		return err
 	}
 
-	var signal resources.Signal
-	signalChan := workflow.GetSignalChannel(ctx, "game-signal")
-	selector := workflow.NewSelector(ctx)
-	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, more bool) {
-		channel.Receive(ctx, &signal)
+	var answerSignal resources.Signal
+	answerSignalChan := workflow.GetSignalChannel(ctx, "answer-signal")
+	answerSelector := workflow.NewSelector(ctx)
+	answerSelector.AddReceive(answerSignalChan, func(channel workflow.ReceiveChannel, more bool) {
+		channel.Receive(ctx, &answerSignal)
 	})
 
 	// loop through questions, start timer
 	var questionCount int = 0
-	keys := getSortedGameMap(gameMap)
+	keys := getSortedGameMap(getQuestions)
 	for _, key := range keys {
 		gameProgress.CurrentQuestion = questionCount + 1
 
-		// Set answer phase
+		// Set game progress to answer phase
 		gameProgress.Stage = "answer"
+
 		// Async timer for amount of time to receive answers
 		timer := workflow.NewTimer(ctx, time.Duration(workflowInput.AnswerTimeLimit)*time.Second)
 
 		var timerFired bool = false
-		selector.AddFuture(timer, func(f workflow.Future) {
+		answerSelector.AddFuture(timer, func(f workflow.Future) {
 			err := f.Get(ctx, nil)
 			if err == nil {
 				logger.Info("Time limit for question has exceeded the limit of " + time.Duration(workflowInput.AnswerTimeLimit).String() + " seconds")
-				signal = resources.Signal{}
+				answerSignal = resources.Signal{}
 				timerFired = true
 			}
 		})
 
 		// Loop through the number of players we expect to answer and break loop if question timer expires
-		result := gameMap[key]
+		result := getQuestions[key]
 		var submissionsMap = make(map[string]resources.Submission)
 
 		for a := 0; a < workflowInput.NumberOfPlayers; a++ {
@@ -121,49 +143,64 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 			if timerFired {
 				break
 			}
-			selector.Select(ctx)
+
+			// Update screen to question
+			//getScreen = "answer"
+
+			answerSelector.Select(ctx)
 
 			// handle duplicate answers from same player
 			var submission resources.Submission
-			if signal.Action == "Answer" && !isAnswerDuplicate(result.Submissions, signal.Player) {
+			if answerSignal.Action == "Answer" && !isAnswerDuplicate(result.Submissions, answerSignal.Player) {
 
 				// ensure answer is upper case
-				answerUpperCase := strings.ToUpper(signal.Answer)
+				answerUpperCase := strings.ToUpper(answerSignal.Answer)
 				submission.Answer = answerUpperCase
+				submission.PlayerId = getPlayers[answerSignal.Player].Id
 
 				if result.Answer == submission.Answer {
 					submission.IsCorrect = true
 
 					if result.Winner == "" {
-						result.Winner = signal.Player
-						playerScore := scoreMap[signal.Player] + 2
-						scoreMap[signal.Player] = playerScore
+						result.Winner = answerSignal.Player
+						submission.IsFirst = true
+						//playerScore := scoreMap[answerSignal.Player] + 2
+						//scoreMap[answerSignal.Player] = playerScore
+						getPlayers[answerSignal.Player] = resources.Player{
+							Id:    getPlayers[answerSignal.Player].Id,
+							Score: getPlayers[answerSignal.Player].Score + 2,
+						}
 					} else {
-						playerScore := scoreMap[signal.Player] + 1
-						scoreMap[signal.Player] = playerScore
+						//playerScore := scoreMap[answerSignal.Player] + 1
+						//scoreMap[answerSignal.Player] = playerScore
+						getPlayers[answerSignal.Player] = resources.Player{
+							Id:    getPlayers[answerSignal.Player].Id,
+							Score: getPlayers[answerSignal.Player].Score + 1,
+						}
 					}
 				} else {
 					submission.IsCorrect = false
 
 					// add player to scoreboard if they don't exist
-					_, ok := scoreMap[signal.Player]
-					if !ok {
-						scoreMap[signal.Player] = 0
-					}
+					//_, ok := scoreMap[answerSignal.Player]
+					//if !ok {
+					//	scoreMap[answerSignal.Player] = 0
+					//}
 				}
-				submissionsMap[signal.Player] = submission
+				submissionsMap[answerSignal.Player] = submission
 				result.Submissions = submissionsMap
 			} else {
-				logger.Warn("Incorrect signal received", signal)
+				logger.Warn("Incorrect signal received", answerSignal)
 				a--
 			}
 
-			gameMap[key] = result
+			getQuestions[key] = result
 		}
 
-		// Set result stage
+		// Set game progress to result phase
 		gameProgress.Stage = "result"
-		// Sleep allowing time to display answers
+
+		// Sleep allowing time to display results
 		workflow.Sleep(ctx, time.Duration(workflowInput.ResultTimeLimit)*time.Second)
 
 		questionCount++
@@ -171,7 +208,7 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 
 	// sort scoreboard
 	var scoreboard []resources.ScoreBoard
-	err = workflow.ExecuteActivity(ctx, activities.LeaderBoardActivity, scoreMap).Get(ctx, &scoreboard)
+	err = workflow.ExecuteActivity(ctx, activities.LeaderBoardActivity, getPlayers).Get(ctx, &scoreboard)
 	if err != nil {
 		logger.Error("Activity failed.", "Error", err)
 		return err

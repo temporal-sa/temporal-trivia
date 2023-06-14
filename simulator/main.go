@@ -72,7 +72,7 @@ func main() {
 
 			log.Println("Game stage is " + gameProgress.Stage)
 
-			if gameProgress.CurrentQuestion == i+1 && gameProgress.Stage == "answer" {
+			if gameProgress.CurrentQuestion == i+1 && gameProgress.Stage == "answers" {
 				break
 			}
 			time.Sleep(1 * time.Second)

@@ -128,6 +128,9 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 		NumberOfQuestions: workflowInput.NumberOfQuestions,
 	}
 
+	// Set game progress to generation questions phase
+	gameProgress.Stage = "questions"
+
 	// run activity to start game and pre-fetch trivia questions and answers
 	err = workflow.ExecuteActivity(ctx, activities.TriviaQuestionActivity, activityInput).Get(ctx, &getQuestions)
 	if err != nil {
@@ -149,7 +152,7 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 		gameProgress.CurrentQuestion = questionCount + 1
 
 		// Set game progress to answer phase
-		gameProgress.Stage = "answer"
+		gameProgress.Stage = "answers"
 
 		// Async timer for amount of time to receive answers
 		timer := workflow.NewTimer(ctx, time.Duration(workflowInput.AnswerTimeLimit)*time.Second)

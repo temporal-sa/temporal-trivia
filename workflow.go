@@ -177,9 +177,6 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 				break
 			}
 
-			// Update screen to question
-			//getScreen = "answer"
-
 			answerSelector.Select(ctx)
 
 			// handle duplicate answers from same player
@@ -197,15 +194,12 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 					if result.Winner == "" {
 						result.Winner = answerSignal.Player
 						submission.IsFirst = true
-						//playerScore := scoreMap[answerSignal.Player] + 2
-						//scoreMap[answerSignal.Player] = playerScore
+
 						getPlayers[answerSignal.Player] = resources.Player{
 							Id:    getPlayers[answerSignal.Player].Id,
 							Score: getPlayers[answerSignal.Player].Score + 2,
 						}
 					} else {
-						//playerScore := scoreMap[answerSignal.Player] + 1
-						//scoreMap[answerSignal.Player] = playerScore
 						getPlayers[answerSignal.Player] = resources.Player{
 							Id:    getPlayers[answerSignal.Player].Id,
 							Score: getPlayers[answerSignal.Player].Score + 1,
@@ -213,12 +207,6 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 					}
 				} else {
 					submission.IsCorrect = false
-
-					// add player to scoreboard if they don't exist
-					//_, ok := scoreMap[answerSignal.Player]
-					//if !ok {
-					//	scoreMap[answerSignal.Player] = 0
-					//}
 				}
 				submissionsMap[answerSignal.Player] = submission
 				result.Submissions = submissionsMap

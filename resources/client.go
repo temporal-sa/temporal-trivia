@@ -3,17 +3,37 @@ package resources
 import (
 	"log"
 	"os"
+	"time"
 
 	"crypto/tls"
 	"crypto/x509"
 
 	"go.temporal.io/sdk/client"
+
+	prom "github.com/prometheus/client_golang/prometheus"
+	"github.com/uber-go/tally/v4"
+	"github.com/uber-go/tally/v4/prometheus"
+	sdktally "go.temporal.io/sdk/contrib/tally"
 )
 
-func GetClientOptions() client.Options {
-	clientOptions := client.Options{
-		HostPort:  os.Getenv("TEMPORAL_HOST_URL"),
-		Namespace: os.Getenv("TEMPORAL_NAMESPACE"),
+func GetClientOptions(clientType string) client.Options {
+
+	var clientOptions client.Options
+	if clientType == "worker" {
+		clientOptions = client.Options{
+			HostPort:  os.Getenv("TEMPORAL_HOST_URL"),
+			Namespace: os.Getenv("TEMPORAL_NAMESPACE"),
+
+			MetricsHandler: sdktally.NewMetricsHandler(newPrometheusScope(prometheus.Configuration{
+				ListenAddress: "0.0.0.0:9090",
+				TimerType:     "histogram",
+			})),
+		}
+	} else {
+		clientOptions = client.Options{
+			HostPort:  os.Getenv("TEMPORAL_HOST_URL"),
+			Namespace: os.Getenv("TEMPORAL_NAMESPACE"),
+		}
 	}
 
 	if os.Getenv("TEMPORAL_MTLS_TLS_CERT") != "" && os.Getenv("TEMPORAL_MTLS_TLS_KEY") != "" {
@@ -60,4 +80,29 @@ func GetClientOptions() client.Options {
 	}
 
 	return clientOptions
+}
+
+func newPrometheusScope(c prometheus.Configuration) tally.Scope {
+	reporter, err := c.NewReporter(
+		prometheus.ConfigurationOptions{
+			Registry: prom.NewRegistry(),
+			OnError: func(err error) {
+				log.Println("error in prometheus reporter", err)
+			},
+		},
+	)
+	if err != nil {
+		log.Fatalln("error creating prometheus reporter", err)
+	}
+	scopeOpts := tally.ScopeOptions{
+		CachedReporter:  reporter,
+		Separator:       prometheus.DefaultSeparator,
+		SanitizeOptions: &sdktally.PrometheusSanitizeOptions,
+		Prefix:          "temporal_samples",
+	}
+	scope, _ := tally.NewRootScope(scopeOpts, time.Second)
+	scope = sdktally.NewPrometheusNamingScope(scope)
+
+	log.Println("prometheus metrics scope created")
+	return scope
 }

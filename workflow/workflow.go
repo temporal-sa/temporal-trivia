@@ -22,17 +22,7 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 	workflowInput = resources.SetDefaults(workflowInput)
 
 	// Activity options
-	ao := workflow.ActivityOptions{
-		StartToCloseTimeout: 300 * time.Second,
-		HeartbeatTimeout:    10 * time.Second,
-		RetryPolicy: &temporal.RetryPolicy{
-			InitialInterval:    time.Second,
-			BackoffCoefficient: 2.0,
-			MaximumInterval:    time.Minute,
-			MaximumAttempts:    5,
-		},
-	}
-	ctx = workflow.WithActivityOptions(ctx, ao)
+	ctx = workflow.WithActivityOptions(ctx, setActivityOptions())
 
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Trivia Game Started")
@@ -261,4 +251,20 @@ func getSortedGameMap(gameMap map[int]resources.Result) []int {
 	sort.Ints(keys)
 
 	return keys
+}
+
+// Activity Options
+func setActivityOptions() workflow.ActivityOptions {
+	ao := workflow.ActivityOptions{
+		StartToCloseTimeout: 300 * time.Second,
+		HeartbeatTimeout:    10 * time.Second,
+		RetryPolicy: &temporal.RetryPolicy{
+			InitialInterval:    time.Second,
+			BackoffCoefficient: 2.0,
+			MaximumInterval:    time.Minute,
+			MaximumAttempts:    5,
+		},
+	}
+
+	return ao
 }

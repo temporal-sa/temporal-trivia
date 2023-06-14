@@ -7,13 +7,13 @@ import (
 	"strconv"
 	"time"
 
-	triviagame "github.com/ktenzer/temporal-trivia"
 	"github.com/ktenzer/temporal-trivia/resources"
+	triviagame "github.com/ktenzer/temporal-trivia/workflow"
 	"go.temporal.io/sdk/client"
 )
 
 func main() {
-	c, err := client.Dial(resources.GetClientOptions())
+	c, err := client.Dial(resources.GetClientOptions("workflow"))
 	if err != nil {
 		log.Fatalln("Unable to create client", err)
 	}

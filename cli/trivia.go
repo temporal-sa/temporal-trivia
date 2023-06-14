@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	triviagame "github.com/ktenzer/temporal-trivia"
 	"github.com/ktenzer/temporal-trivia/resources"
+	triviagame "github.com/ktenzer/temporal-trivia/workflow"
 	"github.com/pborman/getopt/v2"
 	"go.temporal.io/sdk/client"
 )

@@ -98,18 +98,20 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 		}
 	})
 
+	// Add players to game
 	playerCount := 0
 	for {
 		addPlayerSelector.Select(ctx)
 
 		if addPlayerSignal.Action == "Player" && addPlayerSignal.Player != "" {
-			getPlayers[addPlayerSignal.Player] = resources.Player{
-				Id:    playerCount,
-				Score: 0,
+			if _, ok := getPlayers[addPlayerSignal.Player]; ok {
+				getPlayers[addPlayerSignal.Player] = resources.Player{
+					Id:    playerCount,
+					Score: 0,
+				}
+				playerCount++
 			}
 		}
-
-		playerCount++
 
 		// Wait for start of game via signal
 		if addPlayerSignal.Action == "StartGame" {

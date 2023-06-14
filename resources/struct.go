@@ -4,8 +4,8 @@ type WorkflowInput struct {
 	Category          string `json:"category"`
 	NumberOfQuestions int    `json:"numberOfQuestions"`
 	NumberOfPlayers   int    `json:"numberOfPlayers"`
-	NumberOfAnswers   int    `json:"numberOfAnswer"`
 	AnswerTimeLimit   int    `json:"answerTimeLimit"`
+	StartTimeLimit    int    `json:"startTimeLimit"`
 	ResultTimeLimit   int    `json:"resultTimeLimit"`
 }
 
@@ -47,7 +47,6 @@ type ScoreBoard struct {
 	Score  int    `json:"key"`
 }
 
-// New
 type Player struct {
 	Id    int `json:"id"`
 	Score int `json:"score"`

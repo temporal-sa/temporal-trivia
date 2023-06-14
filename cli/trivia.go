@@ -232,6 +232,7 @@ func startGame(c client.Client, chatGptKey, category string, answerTimeout, resu
 		NumberOfPlayers:   1,
 		AnswerTimeLimit:   answerTimeout,
 		ResultTimeLimit:   resultTimeout,
+		StartTimeLimit:    300,
 	}
 
 	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, triviagame.TriviaGameWorkflow, input)

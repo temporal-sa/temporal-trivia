@@ -1,6 +1,7 @@
 package triviagame
 
 import (
+	"errors"
 	"os"
 	"sort"
 	"strings"
@@ -17,7 +18,10 @@ import (
 // Trivia game workflow definition
 func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error {
 
-	// activity options
+	// Set workflow defaults
+	workflowInput = resources.SetDefaults(workflowInput)
+
+	// Activity options
 	ao := workflow.ActivityOptions{
 		StartToCloseTimeout: 300 * time.Second,
 		HeartbeatTimeout:    10 * time.Second,
@@ -32,6 +36,9 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Trivia Game Started")
+
+	// Async timer to cancel game if not started
+	cancelTimer := workflow.NewTimer(ctx, time.Duration(30)*time.Second)
 
 	// Setup player, question and progress state machines
 	getPlayers := make(map[string]resources.Player)
@@ -82,6 +89,15 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 		channel.Receive(ctx, &addPlayerSignal)
 	})
 
+	var cancelTimerFired bool = false
+	addPlayerSelector.AddFuture(cancelTimer, func(f workflow.Future) {
+		err := f.Get(ctx, nil)
+		if err == nil {
+			logger.Info("Time limit for starting game has been exceeded " + time.Duration(workflowInput.AnswerTimeLimit).String() + " seconds")
+			cancelTimerFired = true
+		}
+	})
+
 	playerCount := 0
 	for {
 		addPlayerSelector.Select(ctx)
@@ -98,6 +114,10 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 		// Wait for start of game via signal
 		if addPlayerSignal.Action == "StartGame" {
 			break
+		}
+
+		if cancelTimerFired {
+			return errors.New("Time limit for starting game has been exceeded!")
 		}
 	}
 

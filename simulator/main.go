@@ -12,9 +12,6 @@ import (
 	"go.temporal.io/sdk/client"
 )
 
-var number_players = 5
-var num_questions = 10
-
 func main() {
 	c, err := client.Dial(resources.GetClientOptions())
 	if err != nil {
@@ -29,14 +26,9 @@ func main() {
 		TaskQueue: "trivia-game",
 	}
 
-	// Set input
-	input := resources.WorkflowInput{
-		Category:          "General",
-		NumberOfQuestions: num_questions,
-		NumberOfPlayers:   number_players,
-		AnswerTimeLimit:   10,
-		ResultTimeLimit:   10,
-	}
+	// Set input using defaults
+	input := resources.WorkflowInput{}
+	input = resources.SetDefaults(input)
 
 	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, triviagame.TriviaGameWorkflow, input)
 	if err != nil {
@@ -46,7 +38,7 @@ func main() {
 	log.Println("Started workflow", "WorkflowID", we.GetID(), "RunID", we.GetRunID())
 
 	// loop through player list and add to game
-	for p := 0; p < number_players; p++ {
+	for p := 0; p < input.NumberOfPlayers; p++ {
 		addPlayerSignal := resources.Signal{
 			Action: "Player",
 			Player: "player" + strconv.Itoa(p),
@@ -69,8 +61,8 @@ func main() {
 	}
 
 	// loop through number of questions and check with game stage to provide answers
-	for i := 0; i < num_questions; i++ {
-		log.Println("Game is on question " + strconv.Itoa(i) + " of " + strconv.Itoa(num_questions))
+	for i := 0; i < input.NumberOfQuestions; i++ {
+		log.Println("Game is on question " + strconv.Itoa(i) + " of " + strconv.Itoa(input.NumberOfQuestions))
 
 		for {
 			gameProgress, err := getGameProgress(c, workflowId)
@@ -86,7 +78,7 @@ func main() {
 			time.Sleep(1 * time.Second)
 		}
 
-		for p := 0; p < number_players; p++ {
+		for p := 0; p < input.NumberOfPlayers; p++ {
 			setRandomSeed()
 			randomLetter := getRandomLetter()
 

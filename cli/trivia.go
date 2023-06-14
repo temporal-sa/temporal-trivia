@@ -138,38 +138,37 @@ func main() {
 					break
 				}
 
-				gameMap, err := sendGameQuery(c, workflowId, "getDetails")
+				questions, err := sendGameQuery(c, workflowId, "getQuestions")
 				if err != nil {
 					fmt.Println("Error sending the Query", err)
 				}
 
-				if gameMap[i].Question != "" {
-					fmt.Println(gameMap[i].Question)
-					keys := make([]string, 0, len(gameMap[i].MultipleChoiceMap))
-					for k := range gameMap[i].MultipleChoiceMap {
+				if questions[i].Question != "" {
+					fmt.Println(questions[i].Question)
+					keys := make([]string, 0, len(questions[i].MultipleChoiceMap))
+					for k := range questions[i].MultipleChoiceMap {
 						//fmt.Println(key + " " + value)
 						keys = append(keys, k)
 					}
 					sort.Strings(keys)
 					for _, k := range keys {
-						fmt.Println(k + " " + gameMap[i].MultipleChoiceMap[k])
+						fmt.Println(k + " " + questions[i].MultipleChoiceMap[k])
 					}
 
 					answer := getPlayerResponse()
 
 					gameSignal := resources.Signal{
 						Action: "Answer",
-						Player: "solo",
+						Player: "player0",
 						Answer: answer,
 					}
 
-					err = sendSignal(c, gameSignal, workflowId)
+					err = sendSignal(c, gameSignal, workflowId, "answer-signal")
 					if err != nil {
 						fmt.Println("Error sending the Signal", err)
 					}
 
-					fmt.Println("Correct Answer: " + gameMap[i].Answer)
-					fmt.Println("\n")
+					fmt.Println("Correct Answer: " + questions[i].Answer + "\n")
 					i++
 
 					// sleep for showing results
@@ -179,16 +178,13 @@ func main() {
 				}
 			}
 		}
-		scoreMap, err := sendScoreQuery(c, workflowId, "getScore")
+		getPlayers, err := sendScoreQuery(c, workflowId, "getPlayers")
 		if err != nil {
 			log.Fatalln("Error sending the Query", err)
 		}
 
-		keys := sortedScores(scoreMap)
-		for _, k := range keys {
-			fmt.Println("***** Your Score *****")
-			fmt.Println(k, scoreMap[k])
-		}
+		fmt.Println("***** Your Score *****")
+		fmt.Println(getPlayers["player0"].Score)
 	} else {
 		getopt.Usage()
 		os.Exit(0)
@@ -223,8 +219,9 @@ func getTemporalClient(optTemporalEndpoint, optTemporalNamespace, optMtlsCert, o
 }
 
 func startGame(c client.Client, chatGptKey, category string, answerTimeout, resultTimeout, questions int) string {
+	workflowId := "trivia_game_" + uuid.New().String()
 	workflowOptions := client.StartWorkflowOptions{
-		ID:        "trivia_game_" + uuid.New().String(),
+		ID:        workflowId,
 		TaskQueue: "trivia-game",
 	}
 
@@ -242,29 +239,30 @@ func startGame(c client.Client, chatGptKey, category string, answerTimeout, resu
 		log.Fatalln("Unable to execute workflow", err)
 	}
 
+	// Add player
+	addPlayerSignal := resources.Signal{
+		Action: "Player",
+		Player: "player0",
+	}
+
+	err = sendSignal(c, addPlayerSignal, workflowId, "start-game-signal")
+	if err != nil {
+		log.Fatalln("Error sending the Signal", err)
+	}
+
+	// Start game
+	startGameSignal := resources.Signal{
+		Action: "StartGame",
+	}
+
+	err = sendSignal(c, startGameSignal, workflowId, "start-game-signal")
+	if err != nil {
+		log.Fatalln("Error sending the Signal", err)
+	}
+
 	log.Println("Started workflow", "WorkflowID", we.GetID(), "RunID", we.GetRunID())
 
 	return we.GetID()
-}
-
-// Query game progress
-func queryGame(c client.Client, workflowId string) map[int]resources.Result {
-	gameMap, err := sendGameQuery(c, workflowId, "getDetails")
-	if err != nil {
-		log.Fatalln("Error sending the Query", err)
-	}
-
-	return gameMap
-}
-
-// query game leader scores
-func queryScore(c client.Client, workflowId string) map[string]int {
-	scoreMap, err := sendScoreQuery(c, workflowId, "getScore")
-	if err != nil {
-		log.Fatalln("Error sending the Query", err)
-	}
-
-	return scoreMap
 }
 
 // send game query
@@ -283,13 +281,13 @@ func sendGameQuery(c client.Client, workflowId, query string) (map[int]resources
 }
 
 // send score query
-func sendScoreQuery(c client.Client, workflowId, query string) (map[string]int, error) {
+func sendScoreQuery(c client.Client, workflowId, query string) (map[string]resources.Player, error) {
 	resp, err := c.QueryWorkflow(context.Background(), workflowId, "", query)
 	if err != nil {
 		return nil, err
 	}
 
-	var result map[string]int
+	var result map[string]resources.Player
 	if err := resp.Get(&result); err != nil {
 		return nil, err
 	}
@@ -313,9 +311,9 @@ func sendProgressQuery(c client.Client, workflowId, query string) (resources.Gam
 	return result, nil
 }
 
-func sendSignal(c client.Client, signal resources.Signal, workflowId string) error {
+func sendSignal(c client.Client, signal resources.Signal, workflowId, signalType string) error {
 
-	err := c.SignalWorkflow(context.Background(), workflowId, "", "game-signal", signal)
+	err := c.SignalWorkflow(context.Background(), workflowId, "", signalType, signal)
 	if err != nil {
 		return err
 	}

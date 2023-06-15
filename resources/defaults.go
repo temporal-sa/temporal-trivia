@@ -1,6 +1,6 @@
 package resources
 
-func SetDefaults(workflowInput WorkflowInput) WorkflowInput {
+func SetDefaults(workflowInput GameWorkflowInput) GameWorkflowInput {
 
 	if workflowInput.AnswerTimeLimit == 0 {
 		workflowInput.AnswerTimeLimit = 60

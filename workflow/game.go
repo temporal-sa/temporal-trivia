@@ -3,32 +3,30 @@ package triviagame
 import (
 	"errors"
 	"os"
-	"sort"
 	"strings"
 	"time"
 
 	activities "github.com/ktenzer/temporal-trivia/activities"
 	"github.com/ktenzer/temporal-trivia/resources"
-	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
 	_ "go.temporal.io/sdk/contrib/tools/workflowcheck/determinism"
 )
 
 // Trivia game workflow definition
-func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowInput) error {
+func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkflowInput) error {
 
 	// Set workflow defaults
 	workflowInput = resources.SetDefaults(workflowInput)
 
 	// Activity options
-	ctx = workflow.WithActivityOptions(ctx, setActivityOptions())
+	ctx = workflow.WithActivityOptions(ctx, setDefaultActivityOptions())
 
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Trivia Game Started")
 
 	// Async timer to cancel game if not started
-	cancelTimer := workflow.NewTimer(ctx, time.Duration(30)*time.Second)
+	cancelTimer := workflow.NewTimer(ctx, time.Duration(workflowInput.StartTimeLimit)*time.Second)
 
 	// Setup player, question and progress state machines
 	getPlayers := make(map[string]resources.Player)
@@ -83,7 +81,7 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 	addPlayerSelector.AddFuture(cancelTimer, func(f workflow.Future) {
 		err := f.Get(ctx, nil)
 		if err == nil {
-			logger.Info("Time limit for starting game has been exceeded " + time.Duration(workflowInput.AnswerTimeLimit).String() + " seconds")
+			logger.Info("Time limit for starting game has been exceeded " + time.Duration(workflowInput.StartTimeLimit).String() + " seconds")
 			cancelTimerFired = true
 		}
 	})
@@ -114,7 +112,7 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 	}
 
 	// set activity inputs for starting game
-	activityInput := resources.ActivityInput{
+	activityInput := resources.TriviaQuestionsActivityInput{
 		Key:               os.Getenv("CHATGPT_API_KEY"),
 		Category:          workflowInput.Category,
 		NumberOfQuestions: workflowInput.NumberOfQuestions,
@@ -228,43 +226,4 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.WorkflowIn
 	}
 
 	return nil
-}
-
-// Detect answer duplication
-func isAnswerDuplicate(submissions map[string]resources.Submission, player string) bool {
-	for submittedPlayer, _ := range submissions {
-		if player == submittedPlayer {
-			return true
-		}
-	}
-	return false
-}
-
-// Sort gameMap
-func getSortedGameMap(gameMap map[int]resources.Result) []int {
-
-	keys := make([]int, 0, len(gameMap))
-	for k := range gameMap {
-		keys = append(keys, k)
-	}
-
-	sort.Ints(keys)
-
-	return keys
-}
-
-// Activity Options
-func setActivityOptions() workflow.ActivityOptions {
-	ao := workflow.ActivityOptions{
-		StartToCloseTimeout: 300 * time.Second,
-		HeartbeatTimeout:    10 * time.Second,
-		RetryPolicy: &temporal.RetryPolicy{
-			InitialInterval:    time.Second,
-			BackoffCoefficient: 2.0,
-			MaximumInterval:    time.Minute,
-			MaximumAttempts:    5,
-		},
-	}
-
-	return ao
 }

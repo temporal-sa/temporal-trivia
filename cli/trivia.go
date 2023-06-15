@@ -226,7 +226,7 @@ func startGame(c client.Client, chatGptKey, category string, answerTimeout, resu
 	}
 
 	// Set ChatGPT API Key
-	input := resources.WorkflowInput{
+	input := resources.GameWorkflowInput{
 		Category:          category,
 		NumberOfQuestions: questions,
 		NumberOfPlayers:   1,

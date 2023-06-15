@@ -20,8 +20,10 @@ func main() {
 	w := worker.New(c, "trivia-game", worker.Options{})
 
 	w.RegisterWorkflow(workflow.TriviaGameWorkflow)
+	w.RegisterWorkflow(workflow.AddPlayerWorkflow)
 	w.RegisterActivity(activities.TriviaQuestionActivity)
 	w.RegisterActivity(activities.LeaderBoardActivity)
+	w.RegisterActivity(activities.QueryPlayerActivity)
 
 	err = w.Run(worker.InterruptCh())
 	if err != nil {

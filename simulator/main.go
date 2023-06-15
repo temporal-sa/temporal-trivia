@@ -12,6 +12,8 @@ import (
 	"go.temporal.io/sdk/client"
 )
 
+var gameWorkflowId = "Temporal_Trivia_Simulator_Game_" + strconv.Itoa(12345)
+
 func main() {
 	c, err := client.Dial(resources.GetClientOptions("workflow"))
 	if err != nil {
@@ -19,35 +21,61 @@ func main() {
 	}
 	defer c.Close()
 
-	workflowId := "Temporal_Trivia_Test"
-
-	workflowOptions := client.StartWorkflowOptions{
-		ID:        workflowId,
+	gameWorkflowOptions := client.StartWorkflowOptions{
+		ID:        gameWorkflowId,
 		TaskQueue: "trivia-game",
 	}
 
 	// Set input using defaults
-	input := resources.WorkflowInput{}
-	input = resources.SetDefaults(input)
+	gameWorkflowInput := resources.GameWorkflowInput{}
+	gameWorkflowInput = resources.SetDefaults(gameWorkflowInput)
 
-	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, triviagame.TriviaGameWorkflow, input)
+	gameWorkflow, err := c.ExecuteWorkflow(context.Background(), gameWorkflowOptions, triviagame.TriviaGameWorkflow, gameWorkflowInput)
 	if err != nil {
 		log.Fatalln("Unable to execute workflow", err)
 	}
 
-	log.Println("Started workflow", "WorkflowID", we.GetID(), "RunID", we.GetRunID())
+	log.Println("Started game workflow", "WorkflowID", gameWorkflow.GetID(), "RunID", gameWorkflow.GetRunID())
 
 	// loop through player list and add to game
-	for p := 0; p < input.NumberOfPlayers; p++ {
-		addPlayerSignal := resources.Signal{
-			Action: "Player",
-			Player: "player" + strconv.Itoa(p),
+	time.Sleep(1 * time.Second)
+	for p := 0; p < gameWorkflowInput.NumberOfPlayers; p++ {
+		player := "player" + strconv.Itoa(p)
+		var playerWorkflowId = "Temporal_Trivia_Simulator_Player_" + player
+
+		playerWorkflowOptions := client.StartWorkflowOptions{
+			ID:        playerWorkflowId,
+			TaskQueue: "trivia-game",
 		}
 
-		err = Signal(c, addPlayerSignal, workflowId, "start-game-signal")
-		if err != nil {
-			log.Fatalln("Error sending the Signal", err)
+		playerWorkflowInput := resources.AddPlayerWorkflowInput{
+			GameWorkflowId: gameWorkflowId,
+			Player:         player,
 		}
+
+		addPlayerWorkflow, err := c.ExecuteWorkflow(context.Background(), playerWorkflowOptions, triviagame.AddPlayerWorkflow, playerWorkflowInput)
+		if err != nil {
+			log.Fatalln("Unable to execute workflow", err)
+		}
+
+		log.Println("Started player workflow for player "+player, "WorkflowID", addPlayerWorkflow.GetID(), "RunID", addPlayerWorkflow.GetRunID())
+
+		// synchronously wait for add player workflow to complete
+		var addPlayerWorkflowResult string
+		err = addPlayerWorkflow.Get(context.Background(), &addPlayerWorkflowResult)
+		if err != nil {
+			log.Fatalln("Unable get workflow result", err)
+		}
+
+		//addPlayerSignal := resources.Signal{
+		//	Action: "Player",
+		//	Player: "player" + strconv.Itoa(p),
+		//}
+
+		//err = Signal(c, addPlayerSignal, workflowId, "start-game-signal")
+		//if err != nil {
+		//	log.Fatalln("Error sending the Signal", err)
+		//}
 	}
 
 	// start game
@@ -55,17 +83,17 @@ func main() {
 		Action: "StartGame",
 	}
 
-	err = Signal(c, startGameSignal, workflowId, "start-game-signal")
+	err = Signal(c, startGameSignal, gameWorkflowId, "start-game-signal")
 	if err != nil {
 		log.Fatalln("Error sending the Signal", err)
 	}
 
 	// loop through number of questions and check with game stage to provide answers
-	for i := 0; i < input.NumberOfQuestions; i++ {
-		log.Println("Game is on question " + strconv.Itoa(i) + " of " + strconv.Itoa(input.NumberOfQuestions))
+	for i := 0; i < gameWorkflowInput.NumberOfQuestions; i++ {
+		log.Println("Game is on question " + strconv.Itoa(i) + " of " + strconv.Itoa(gameWorkflowInput.NumberOfQuestions))
 
 		for {
-			gameProgress, err := getGameProgress(c, workflowId)
+			gameProgress, err := getGameProgress(c, gameWorkflowId)
 			if err != nil {
 				log.Fatalln("Error sending the Query", err)
 			}
@@ -78,7 +106,7 @@ func main() {
 			time.Sleep(1 * time.Second)
 		}
 
-		for p := 0; p < input.NumberOfPlayers; p++ {
+		for p := 0; p < gameWorkflowInput.NumberOfPlayers; p++ {
 			setRandomSeed()
 			randomLetter := getRandomLetter()
 
@@ -89,7 +117,7 @@ func main() {
 				Answer: randomLetter,
 			}
 
-			err = Signal(c, answerSignal, workflowId, "answer-signal")
+			err = Signal(c, answerSignal, gameWorkflowId, "answer-signal")
 			if err != nil {
 				log.Fatalln("Error sending the Signal", err)
 			}

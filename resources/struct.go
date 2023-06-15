@@ -1,6 +1,6 @@
 package resources
 
-type WorkflowInput struct {
+type GameWorkflowInput struct {
 	Category          string `json:"category"`
 	NumberOfQuestions int    `json:"numberOfQuestions"`
 	NumberOfPlayers   int    `json:"numberOfPlayers"`
@@ -9,10 +9,21 @@ type WorkflowInput struct {
 	ResultTimeLimit   int    `json:"resultTimeLimit"`
 }
 
-type ActivityInput struct {
+type AddPlayerWorkflowInput struct {
+	GameWorkflowId string `json:"gameWorkflowId"`
+	Player         string `json:"player"`
+}
+
+type TriviaQuestionsActivityInput struct {
 	Key               string `json:"key"`
 	Category          string `json:"category"`
 	NumberOfQuestions int    `json:"question"`
+}
+
+type QueryPlayerActivityInput struct {
+	WorkflowId string `json:"workflowId"`
+	Player     string `json:"player"`
+	QueryType  string `json:"queryType"`
 }
 
 type Signal struct {

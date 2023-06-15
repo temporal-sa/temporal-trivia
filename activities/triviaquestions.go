@@ -14,7 +14,7 @@ import (
 	_ "go.temporal.io/sdk/contrib/tools/workflowcheck/determinism"
 )
 
-func TriviaQuestionActivity(ctx context.Context, input resources.ActivityInput) (map[int]resources.Result, error) {
+func TriviaQuestionActivity(ctx context.Context, input resources.TriviaQuestionsActivityInput) (map[int]resources.Result, error) {
 	logger := activity.GetLogger(ctx)
 
 	logger.Info("TriviaQuestionActivity")

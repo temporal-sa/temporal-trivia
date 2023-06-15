@@ -66,16 +66,6 @@ func main() {
 		if err != nil {
 			log.Fatalln("Unable get workflow result", err)
 		}
-
-		//addPlayerSignal := resources.Signal{
-		//	Action: "Player",
-		//	Player: "player" + strconv.Itoa(p),
-		//}
-
-		//err = Signal(c, addPlayerSignal, workflowId, "start-game-signal")
-		//if err != nil {
-		//	log.Fatalln("Error sending the Signal", err)
-		//}
 	}
 
 	// start game

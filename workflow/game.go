@@ -32,18 +32,12 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 	getPlayers := make(map[string]resources.Player)
 	getQuestions := make(map[int]resources.Result)
 
-	var gameProgress resources.GameProgress
-	gameProgress.NumberOfQuestions = workflowInput.NumberOfQuestions
-	gameProgress.CurrentQuestion = 0
-
-	// Set game progress to start phase
-	gameProgress.Stage = "start"
+	gameProgress := initGameState(workflowInput.NumberOfQuestions)
 
 	// Setup query handler for gathering game questions
 	err := workflow.SetQueryHandler(ctx, "getPlayers", func(input []byte) (map[string]resources.Player, error) {
 		return getPlayers, nil
 	})
-
 	if err != nil {
 		logger.Error("SetQueryHandler failed for getPlayers: " + err.Error())
 		return err
@@ -53,7 +47,6 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 	err = workflow.SetQueryHandler(ctx, "getQuestions", func(input []byte) (map[int]resources.Result, error) {
 		return getQuestions, nil
 	})
-
 	if err != nil {
 		logger.Error("SetQueryHandler failed for getQuestions: " + err.Error())
 		return err
@@ -63,9 +56,8 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 	err = workflow.SetQueryHandler(ctx, "getProgress", func(input []byte) (resources.GameProgress, error) {
 		return gameProgress, nil
 	})
-
 	if err != nil {
-		logger.Error("SetQueryHandler failed for gameProgress: " + err.Error())
+		logger.Error("SetQueryHandler failed for getProgress: " + err.Error())
 		return err
 	}
 
@@ -111,17 +103,11 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 		}
 	}
 
-	// set activity inputs for starting game
-	activityInput := resources.TriviaQuestionsActivityInput{
-		Key:               os.Getenv("CHATGPT_API_KEY"),
-		Category:          workflowInput.Category,
-		NumberOfQuestions: workflowInput.NumberOfQuestions,
-	}
-
 	// Set game progress to generation questions phase
 	gameProgress.Stage = "questions"
 
 	// run activity to start game and pre-fetch trivia questions and answers
+	activityInput := setTriviaQuestionsActivityInput(os.Getenv("CHATGPT_API_KEY"), workflowInput.Category, workflowInput.NumberOfQuestions)
 	err = workflow.ExecuteActivity(ctx, activities.TriviaQuestionActivity, activityInput).Get(ctx, &getQuestions)
 	if err != nil {
 		logger.Error("Activity failed.", "Error", err)

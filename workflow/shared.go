@@ -5,10 +5,9 @@ import (
 	"time"
 
 	"github.com/ktenzer/temporal-trivia/resources"
+	_ "go.temporal.io/sdk/contrib/tools/workflowcheck/determinism"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
-
-	_ "go.temporal.io/sdk/contrib/tools/workflowcheck/determinism"
 )
 
 // Detect answer duplication
@@ -32,6 +31,17 @@ func getSortedGameMap(gameMap map[int]resources.Result) []int {
 	sort.Ints(keys)
 
 	return keys
+}
+
+// Triva Questions Activity Input
+func setTriviaQuestionsActivityInput(chatgptKey, category string, numberQuestions int) resources.TriviaQuestionsActivityInput {
+	activityInput := resources.TriviaQuestionsActivityInput{
+		Key:               chatgptKey,
+		Category:          category,
+		NumberOfQuestions: numberQuestions,
+	}
+
+	return activityInput
 }
 
 // Activity Options
@@ -61,4 +71,14 @@ func setDefaultLocalActivityOptions() workflow.LocalActivityOptions {
 	}
 
 	return ao
+}
+
+// Initialize Game State
+func initGameState(numberQuestions int) resources.GameProgress {
+	var gameProgress resources.GameProgress
+	gameProgress.NumberOfQuestions = numberQuestions
+	gameProgress.CurrentQuestion = 0
+	gameProgress.Stage = "start"
+
+	return gameProgress
 }

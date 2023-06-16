@@ -79,17 +79,14 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 	})
 
 	// Add players to game
-	playerCount := 0
 	for {
 		addPlayerSelector.Select(ctx)
 
 		if addPlayerSignal.Action == "Player" && addPlayerSignal.Player != "" {
 			if _, ok := getPlayers[addPlayerSignal.Player]; ok {
 				getPlayers[addPlayerSignal.Player] = resources.Player{
-					Id:    playerCount,
 					Score: 0,
 				}
-				playerCount++
 			}
 		}
 
@@ -162,7 +159,6 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 				// ensure answer is upper case
 				answerUpperCase := strings.ToUpper(answerSignal.Answer)
 				submission.Answer = answerUpperCase
-				submission.PlayerId = getPlayers[answerSignal.Player].Id
 
 				if result.Answer == submission.Answer {
 					submission.IsCorrect = true
@@ -172,12 +168,10 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 						submission.IsFirst = true
 
 						getPlayers[answerSignal.Player] = resources.Player{
-							Id:    getPlayers[answerSignal.Player].Id,
 							Score: getPlayers[answerSignal.Player].Score + 2,
 						}
 					} else {
 						getPlayers[answerSignal.Player] = resources.Player{
-							Id:    getPlayers[answerSignal.Player].Id,
 							Score: getPlayers[answerSignal.Player].Score + 1,
 						}
 					}

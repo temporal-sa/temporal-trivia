@@ -41,7 +41,6 @@ type Result struct {
 }
 
 type Submission struct {
-	PlayerId  int    `json:"playerId"`
 	Answer    string `json:"answer"`
 	IsCorrect bool   `json:"isCorrect"`
 	IsFirst   bool   `json:"isFirst"`
@@ -59,6 +58,5 @@ type ScoreBoard struct {
 }
 
 type Player struct {
-	Id    int `json:"id"`
 	Score int `json:"score"`
 }

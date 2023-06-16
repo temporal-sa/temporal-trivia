@@ -299,9 +299,9 @@ func sendScoreQuery(c client.Client, workflowId, query string) (map[string]resou
 }
 
 // send progress query
-func sendProgressQuery(c client.Client, workflowId, query string) (resources.GameProgress, error) {
+func sendProgressQuery(c client.Client, workflowId, query string) (triviagame.GameProgress, error) {
 	resp, err := c.QueryWorkflow(context.Background(), workflowId, "", query)
-	var result resources.GameProgress
+	var result triviagame.GameProgress
 
 	if err != nil {
 		return result, err

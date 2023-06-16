@@ -40,12 +40,6 @@ type Submission struct {
 	IsFirst   bool   `json:"isFirst"`
 }
 
-type GameProgress struct {
-	NumberOfQuestions int    `json:"numberOfQuestions"`
-	CurrentQuestion   int    `json:"currentQuestion"`
-	Stage             string `json:"stage"`
-}
-
 type ScoreBoard struct {
 	Player string `json:"value"`
 	Score  int    `json:"key"`

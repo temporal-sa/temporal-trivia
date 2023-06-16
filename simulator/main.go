@@ -144,9 +144,9 @@ func getQuestions(c client.Client, workflowId string) (map[int]resources.Result,
 	return result, nil
 }
 
-func getGameProgress(c client.Client, workflowId string) (resources.GameProgress, error) {
+func getGameProgress(c client.Client, workflowId string) (triviagame.GameProgress, error) {
 	resp, err := c.QueryWorkflow(context.Background(), workflowId, "", "getProgress")
-	var result resources.GameProgress
+	var result triviagame.GameProgress
 
 	if err != nil {
 		return result, err

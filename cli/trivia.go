@@ -157,7 +157,7 @@ func main() {
 
 					answer := getPlayerResponse()
 
-					gameSignal := resources.Signal{
+					gameSignal := triviagame.GameSignal{
 						Action: "Answer",
 						Player: "player0",
 						Answer: answer,
@@ -175,6 +175,8 @@ func main() {
 					time.Sleep(time.Duration(resultTimeout) * time.Second)
 					break
 
+				} else {
+					continue
 				}
 			}
 		}
@@ -241,7 +243,7 @@ func startGame(c client.Client, chatGptKey, category string, answerTimeout, resu
 	}
 
 	// Add player
-	addPlayerSignal := resources.Signal{
+	addPlayerSignal := triviagame.GameSignal{
 		Action: "Player",
 		Player: "player0",
 	}
@@ -252,7 +254,7 @@ func startGame(c client.Client, chatGptKey, category string, answerTimeout, resu
 	}
 
 	// Start game
-	startGameSignal := resources.Signal{
+	startGameSignal := triviagame.GameSignal{
 		Action: "StartGame",
 	}
 
@@ -312,7 +314,7 @@ func sendProgressQuery(c client.Client, workflowId, query string) (resources.Gam
 	return result, nil
 }
 
-func sendSignal(c client.Client, signal resources.Signal, workflowId, signalType string) error {
+func sendSignal(c client.Client, signal triviagame.GameSignal, workflowId, signalType string) error {
 
 	err := c.SignalWorkflow(context.Background(), workflowId, "", signalType, signal)
 	if err != nil {

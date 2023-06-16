@@ -72,13 +72,3 @@ func setDefaultLocalActivityOptions() workflow.LocalActivityOptions {
 
 	return ao
 }
-
-// Initialize Game State
-func initGameState(numberQuestions int) resources.GameProgress {
-	var gameProgress resources.GameProgress
-	gameProgress.NumberOfQuestions = numberQuestions
-	gameProgress.CurrentQuestion = 0
-	gameProgress.Stage = "start"
-
-	return gameProgress
-}

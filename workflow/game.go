@@ -28,46 +28,28 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 	// Async timer to cancel game if not started
 	cancelTimer := workflow.NewTimer(ctx, time.Duration(workflowInput.StartTimeLimit)*time.Second)
 
-	// Setup player, question and progress state machines
-	getPlayers := make(map[string]resources.Player)
-	getQuestions := make(map[int]resources.Result)
-
-	gameProgress := initGameState(workflowInput.NumberOfQuestions)
-
-	// Setup query handler for gathering game questions
-	err := workflow.SetQueryHandler(ctx, "getPlayers", func(input []byte) (map[string]resources.Player, error) {
-		return getPlayers, nil
-	})
+	// Initialize game players state machine, exporting as query
+	getPlayers, err := initGetPlayersQuery(ctx)
 	if err != nil {
-		logger.Error("SetQueryHandler failed for getPlayers: " + err.Error())
 		return err
 	}
 
-	// Setup query handler for gathering game questions
-	err = workflow.SetQueryHandler(ctx, "getQuestions", func(input []byte) (map[int]resources.Result, error) {
-		return getQuestions, nil
-	})
+	// Initialize game questions state machine, exporting as query
+	getQuestions, err := initGetQuestionsQuery(ctx)
 	if err != nil {
-		logger.Error("SetQueryHandler failed for getQuestions: " + err.Error())
 		return err
 	}
 
-	// Setup query handler for gathering game progress
-	err = workflow.SetQueryHandler(ctx, "getProgress", func(input []byte) (resources.GameProgress, error) {
-		return gameProgress, nil
-	})
+	// Initialize game progress state machine, exporting as query
+	var gp GameProgress
+	gp, err = gp.initGetProgressQuery(ctx, workflowInput.NumberOfQuestions)
 	if err != nil {
-		logger.Error("SetQueryHandler failed for getProgress: " + err.Error())
 		return err
 	}
 
-	// Add players to game using signal
-	var addPlayerSignal resources.Signal
-	addPlayerSignalChan := workflow.GetSignalChannel(ctx, "start-game-signal")
-	addPlayerSelector := workflow.NewSelector(ctx)
-	addPlayerSelector.AddReceive(addPlayerSignalChan, func(channel workflow.ReceiveChannel, more bool) {
-		channel.Receive(ctx, &addPlayerSignal)
-	})
+	// Add players to game using signal and wait for start game signal
+	var gs GameSignal
+	addPlayerSelector := gs.gameSignal(ctx)
 
 	var cancelTimerFired bool = false
 	addPlayerSelector.AddFuture(cancelTimer, func(f workflow.Future) {
@@ -82,16 +64,16 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 	for {
 		addPlayerSelector.Select(ctx)
 
-		if addPlayerSignal.Action == "Player" && addPlayerSignal.Player != "" {
-			if _, ok := getPlayers[addPlayerSignal.Player]; ok {
-				getPlayers[addPlayerSignal.Player] = resources.Player{
+		if gs.Action == "Player" && gs.Player != "" {
+			if _, ok := getPlayers[gs.Player]; ok {
+				getPlayers[gs.Player] = resources.Player{
 					Score: 0,
 				}
 			}
 		}
 
 		// Wait for start of game via signal
-		if addPlayerSignal.Action == "StartGame" {
+		if gs.Action == "StartGame" {
 			break
 		}
 
@@ -101,7 +83,7 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 	}
 
 	// Set game progress to generation questions phase
-	gameProgress.Stage = "questions"
+	gp.Stage = "questions"
 
 	// run activity to start game and pre-fetch trivia questions and answers
 	activityInput := setTriviaQuestionsActivityInput(os.Getenv("CHATGPT_API_KEY"), workflowInput.Category, workflowInput.NumberOfQuestions)
@@ -111,21 +93,18 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 		return err
 	}
 
-	var answerSignal resources.Signal
-	answerSignalChan := workflow.GetSignalChannel(ctx, "answer-signal")
-	answerSelector := workflow.NewSelector(ctx)
-	answerSelector.AddReceive(answerSignalChan, func(channel workflow.ReceiveChannel, more bool) {
-		channel.Receive(ctx, &answerSignal)
-	})
+	// Recieve player answer via signals
+	var as GameSignal
+	answerSelector := as.answerSignal(ctx)
 
 	// loop through questions, start timer
 	var questionCount int = 0
 	keys := getSortedGameMap(getQuestions)
 	for _, key := range keys {
-		gameProgress.CurrentQuestion = questionCount + 1
+		gp.CurrentQuestion = questionCount + 1
 
 		// Set game progress to answer phase
-		gameProgress.Stage = "answers"
+		gp.Stage = "answers"
 
 		// Async timer for amount of time to receive answers
 		timer := workflow.NewTimer(ctx, time.Duration(workflowInput.AnswerTimeLimit)*time.Second)
@@ -135,7 +114,7 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 			err := f.Get(ctx, nil)
 			if err == nil {
 				logger.Info("Time limit for question has exceeded the limit of " + time.Duration(workflowInput.AnswerTimeLimit).String() + " seconds")
-				answerSignal = resources.Signal{}
+				as = GameSignal{}
 				timerFired = true
 			}
 		})
@@ -154,34 +133,34 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 
 			// handle duplicate answers from same player
 			var submission resources.Submission
-			if answerSignal.Action == "Answer" && !isAnswerDuplicate(result.Submissions, answerSignal.Player) {
+			if as.Action == "Answer" && !isAnswerDuplicate(result.Submissions, as.Player) {
 
 				// ensure answer is upper case
-				answerUpperCase := strings.ToUpper(answerSignal.Answer)
+				answerUpperCase := strings.ToUpper(as.Answer)
 				submission.Answer = answerUpperCase
 
 				if result.Answer == submission.Answer {
 					submission.IsCorrect = true
 
 					if result.Winner == "" {
-						result.Winner = answerSignal.Player
+						result.Winner = as.Player
 						submission.IsFirst = true
 
-						getPlayers[answerSignal.Player] = resources.Player{
-							Score: getPlayers[answerSignal.Player].Score + 2,
+						getPlayers[as.Player] = resources.Player{
+							Score: getPlayers[as.Player].Score + 2,
 						}
 					} else {
-						getPlayers[answerSignal.Player] = resources.Player{
-							Score: getPlayers[answerSignal.Player].Score + 1,
+						getPlayers[as.Player] = resources.Player{
+							Score: getPlayers[as.Player].Score + 1,
 						}
 					}
 				} else {
 					submission.IsCorrect = false
 				}
-				submissionsMap[answerSignal.Player] = submission
+				submissionsMap[as.Player] = submission
 				result.Submissions = submissionsMap
 			} else {
-				logger.Warn("Incorrect signal received", answerSignal)
+				logger.Warn("Incorrect signal received", as)
 				a--
 			}
 
@@ -189,7 +168,7 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 		}
 
 		// Set game progress to result phase
-		gameProgress.Stage = "result"
+		gp.Stage = "result"
 
 		// Sleep allowing time to display results
 		workflow.Sleep(ctx, time.Duration(workflowInput.ResultTimeLimit)*time.Second)

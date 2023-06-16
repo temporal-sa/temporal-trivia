@@ -69,7 +69,7 @@ func main() {
 	}
 
 	// start game
-	startGameSignal := resources.Signal{
+	startGameSignal := triviagame.GameSignal{
 		Action: "StartGame",
 	}
 
@@ -101,7 +101,7 @@ func main() {
 			randomLetter := getRandomLetter()
 
 			log.Println("Player player" + strconv.Itoa(p) + " answer is " + randomLetter)
-			answerSignal := resources.Signal{
+			answerSignal := triviagame.GameSignal{
 				Action: "Answer",
 				Player: "player" + strconv.Itoa(p),
 				Answer: randomLetter,
@@ -118,7 +118,7 @@ func main() {
 
 }
 
-func Signal(c client.Client, signal resources.Signal, workflowId string, signalType string) error {
+func Signal(c client.Client, signal triviagame.GameSignal, workflowId string, signalType string) error {
 
 	err := c.SignalWorkflow(context.Background(), workflowId, "", signalType, signal)
 	if err != nil {

@@ -38,7 +38,7 @@ func AddPlayerWorkflow(ctx workflow.Context, workflowInput resources.AddPlayerWo
 	// TODO: Add Activity to check player name is language compliant
 
 	// Add player via signal
-	addPlayerSignal := resources.Signal{
+	addPlayerSignal := GameSignal{
 		Action: "Player",
 		Player: workflowInput.Player,
 	}

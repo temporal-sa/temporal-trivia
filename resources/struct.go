@@ -26,12 +26,6 @@ type QueryPlayerActivityInput struct {
 	QueryType  string `json:"queryType"`
 }
 
-type Signal struct {
-	Action string `json:"action"`
-	Player string `json:"player"`
-	Answer string `json:"answer"`
-}
-
 type Result struct {
 	Question          string                `json:"question"`
 	Answer            string                `json:"answer"`

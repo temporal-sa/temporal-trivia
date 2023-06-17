@@ -1,5 +1,10 @@
 package resources
 
+import (
+	"math/rand"
+	"time"
+)
+
 func SetDefaults(workflowInput GameWorkflowInput) GameWorkflowInput {
 
 	if workflowInput.AnswerTimeLimit == 0 {
@@ -7,7 +12,7 @@ func SetDefaults(workflowInput GameWorkflowInput) GameWorkflowInput {
 	}
 
 	if workflowInput.Category == "" {
-		workflowInput.Category = "General"
+		workflowInput.Category = getRandomCategory()
 	}
 
 	if workflowInput.NumberOfPlayers == 0 {
@@ -27,4 +32,13 @@ func SetDefaults(workflowInput GameWorkflowInput) GameWorkflowInput {
 	}
 
 	return workflowInput
+}
+
+func getRandomCategory() string {
+	rand.Seed(time.Now().UnixNano())
+
+	keys := []string{"General", "Sports", "Science", "Travel", "Geography", "Capitols", "Authors", "Books", "Animals", "Plants", "Foods", "Cities"}
+	randomIndex := rand.Intn(len(keys))
+
+	return keys[randomIndex]
 }

@@ -23,7 +23,7 @@ func QueryPlayerActivity(ctx context.Context, activityInput resources.QueryPlaye
 	}
 	defer c.Close()
 
-	isPlayer := false
+	var isPlayer bool
 	if activityInput.QueryType == "poll" {
 		for {
 			resp, err := c.QueryWorkflow(context.Background(), activityInput.WorkflowId, "", "getPlayers")
@@ -37,7 +37,7 @@ func QueryPlayerActivity(ctx context.Context, activityInput resources.QueryPlaye
 				return isPlayer, err
 			}
 
-			if _, ok := getPlayers[activityInput.Player]; !ok {
+			if _, ok := getPlayers[activityInput.Player]; ok {
 				isPlayer = true
 				break
 			}

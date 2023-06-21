@@ -34,9 +34,8 @@ func getSortedGameMap(gameMap map[int]resources.Result) []int {
 }
 
 // Triva Questions Activity Input
-func setTriviaQuestionsActivityInput(chatgptKey, category string, numberQuestions int) resources.TriviaQuestionsActivityInput {
+func triviaQuestionsActivityInput(category string, numberQuestions int) resources.TriviaQuestionsActivityInput {
 	activityInput := resources.TriviaQuestionsActivityInput{
-		Key:               chatgptKey,
 		Category:          category,
 		NumberOfQuestions: numberQuestions,
 	}

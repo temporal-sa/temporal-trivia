@@ -22,7 +22,8 @@ func LeaderBoardActivity(ctx context.Context, getPlayers map[string]resources.Pl
 
 func sortLeaderBoard(getPlayers map[string]resources.Player) []resources.ScoreBoard {
 	var scoreboard []resources.ScoreBoard
-	for k, _ := range getPlayers {
+
+	for k := range getPlayers {
 		scoreboard = append(scoreboard, resources.ScoreBoard{Player: k, Score: getPlayers[k].Score})
 	}
 

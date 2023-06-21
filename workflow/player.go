@@ -24,7 +24,7 @@ func AddPlayerWorkflow(ctx workflow.Context, workflowInput resources.AddPlayerWo
 	}
 
 	// run activity to start game and pre-fetch trivia questions and answers
-	isPlayer := false
+	var isPlayer bool
 	err := workflow.ExecuteLocalActivity(ctx, activities.QueryPlayerActivity, activityInput).Get(ctx, &isPlayer)
 	if err != nil {
 		logger.Error("Activity failed.", "Error", err)

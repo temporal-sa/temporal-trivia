@@ -2,6 +2,7 @@ package triviagame
 
 import (
 	"context"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -28,7 +29,7 @@ func TriviaQuestionActivity(ctx context.Context, input resources.TriviaQuestions
 	}
 
 	// openai client
-	client := openai.NewClient(input.Key)
+	client := openai.NewClient(os.Getenv("CHATGPT_API_KEY"))
 	messages := make([]openai.ChatCompletionMessage, 0)
 
 	// pre-fetch list of questions

@@ -61,8 +61,7 @@ func main() {
 		log.Println("Started player workflow for player "+player, "WorkflowID", addPlayerWorkflow.GetID(), "RunID", addPlayerWorkflow.GetRunID())
 
 		// synchronously wait for add player workflow to complete
-		var addPlayerWorkflowResult string
-		err = addPlayerWorkflow.Get(context.Background(), &addPlayerWorkflowResult)
+		err = addPlayerWorkflow.Get(context.Background(), nil)
 		if err != nil {
 			log.Fatalln("Unable get workflow result", err)
 		}
@@ -73,7 +72,7 @@ func main() {
 		Action: "StartGame",
 	}
 
-	err = Signal(c, startGameSignal, gameWorkflowId, "start-game-signal")
+	err = GameSignal(c, startGameSignal, gameWorkflowId, "start-game-signal")
 	if err != nil {
 		log.Fatalln("Error sending the Signal", err)
 	}
@@ -101,13 +100,14 @@ func main() {
 			randomLetter := getRandomLetter()
 
 			log.Println("Player player" + strconv.Itoa(p) + " answer is " + randomLetter)
-			answerSignal := triviagame.GameSignal{
-				Action: "Answer",
-				Player: "player" + strconv.Itoa(p),
-				Answer: randomLetter,
+			answerSignal := triviagame.AnswerSignal{
+				Action:   "Answer",
+				Player:   "player" + strconv.Itoa(p),
+				Question: i,
+				Answer:   randomLetter,
 			}
 
-			err = Signal(c, answerSignal, gameWorkflowId, "answer-signal")
+			err = AnswerSignal(c, answerSignal, gameWorkflowId, "answer-signal")
 			if err != nil {
 				log.Fatalln("Error sending the Signal", err)
 			}
@@ -118,7 +118,19 @@ func main() {
 
 }
 
-func Signal(c client.Client, signal triviagame.GameSignal, workflowId string, signalType string) error {
+func GameSignal(c client.Client, signal triviagame.GameSignal, workflowId string, signalType string) error {
+
+	err := c.SignalWorkflow(context.Background(), workflowId, "", signalType, signal)
+	if err != nil {
+		return err
+	}
+
+	log.Println("Workflow[" + workflowId + "] Signaled")
+
+	return nil
+}
+
+func AnswerSignal(c client.Client, signal triviagame.AnswerSignal, workflowId string, signalType string) error {
 
 	err := c.SignalWorkflow(context.Background(), workflowId, "", signalType, signal)
 	if err != nil {

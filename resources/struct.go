@@ -1,5 +1,9 @@
 package resources
 
+type GameWorkflowConfig struct {
+	ChatGptKey string `json:"chatGptKey"`
+}
+
 type GameWorkflowInput struct {
 	Category          string `json:"category"`
 	NumberOfQuestions int    `json:"numberOfQuestions"`

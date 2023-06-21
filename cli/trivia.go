@@ -157,13 +157,14 @@ func main() {
 
 					answer := getPlayerResponse()
 
-					gameSignal := triviagame.GameSignal{
-						Action: "Answer",
-						Player: "player0",
-						Answer: answer,
+					gameSignal := triviagame.AnswerSignal{
+						Action:   "Answer",
+						Player:   "player0",
+						Question: i,
+						Answer:   answer,
 					}
 
-					err = sendSignal(c, gameSignal, workflowId, "answer-signal")
+					err = sendAnswerSignal(c, gameSignal, workflowId, "answer-signal")
 					if err != nil {
 						fmt.Println("Error sending the Signal", err)
 					}
@@ -248,7 +249,7 @@ func startGame(c client.Client, chatGptKey, category string, answerTimeout, resu
 		Player: "player0",
 	}
 
-	err = sendSignal(c, addPlayerSignal, workflowId, "start-game-signal")
+	err = sendGameSignal(c, addPlayerSignal, workflowId, "start-game-signal")
 	if err != nil {
 		log.Fatalln("Error sending the Signal", err)
 	}
@@ -258,7 +259,7 @@ func startGame(c client.Client, chatGptKey, category string, answerTimeout, resu
 		Action: "StartGame",
 	}
 
-	err = sendSignal(c, startGameSignal, workflowId, "start-game-signal")
+	err = sendGameSignal(c, startGameSignal, workflowId, "start-game-signal")
 	if err != nil {
 		log.Fatalln("Error sending the Signal", err)
 	}
@@ -314,7 +315,17 @@ func sendProgressQuery(c client.Client, workflowId, query string) (triviagame.Ga
 	return result, nil
 }
 
-func sendSignal(c client.Client, signal triviagame.GameSignal, workflowId, signalType string) error {
+func sendGameSignal(c client.Client, signal triviagame.GameSignal, workflowId, signalType string) error {
+
+	err := c.SignalWorkflow(context.Background(), workflowId, "", signalType, signal)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func sendAnswerSignal(c client.Client, signal triviagame.AnswerSignal, workflowId, signalType string) error {
 
 	err := c.SignalWorkflow(context.Background(), workflowId, "", signalType, signal)
 	if err != nil {

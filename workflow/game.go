@@ -1,9 +1,6 @@
 package triviagame
 
 import (
-
-	//"strings"
-
 	"errors"
 
 	activities "github.com/ktenzer/temporal-trivia/activities"
@@ -16,14 +13,15 @@ import (
 // Trivia game workflow definition
 func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkflowInput) error {
 
+	// Setup logger
+	logger := workflow.GetLogger(ctx)
+	logger.Info("Trivia Game Started")
+
 	// Set workflow defaults
 	workflowInput = resources.SetDefaults(workflowInput)
 
 	// Activity options
 	ctx = workflow.WithActivityOptions(ctx, setDefaultActivityOptions())
-
-	logger := workflow.GetLogger(ctx)
-	logger.Info("Trivia Game Started")
 
 	// Initialize game players state machine, exporting as query
 	getPlayers, err := initGetPlayersQuery(ctx)
@@ -45,14 +43,13 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 	}
 
 	// Add players to game using signal and wait for start game signal
-	//var gs GameSignal
 	var ps PlayerSignal
 	isCancelled := ps.addPlayers(ctx, workflowInput, getPlayers)
 	if isCancelled {
 		return errors.New("Time limit of " + intToString(workflowInput.StartTimeLimit) + workflowInput.Category + " seconds for starting game has been exceeded!")
 	}
 
-	// Set Category if not provided
+	// Set trivia question category if not provided
 	if workflowInput.Category == "" {
 		var category string
 		laCtx := workflow.WithLocalActivityOptions(ctx, setDefaultLocalActivityOptions())
@@ -60,10 +57,10 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 		workflowInput.Category = category
 	}
 
-	// Set game progress to generation questions phase
+	// Update game progress stage
 	gp.Stage = "questions"
 
-	// run activity to start game and pre-fetch trivia questions and answers
+	// Run activity to start game and pre-fetch trivia questions and answers
 	activityInput := triviaQuestionsActivityInput(workflowInput.Category, workflowInput.NumberOfQuestions)
 	err = workflow.ExecuteActivity(ctx, activities.TriviaQuestionActivity, activityInput).Get(ctx, &getQuestions)
 	if err != nil {
@@ -71,9 +68,10 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 		return err
 	}
 
+	// Run the game loop
 	getQuestions, getPlayers = gp.runGame(ctx, workflowInput, getQuestions, getPlayers)
 
-	// sort scoreboard
+	// Provide sorted scoreboard results
 	var scoreboard []resources.ScoreBoard
 	err = workflow.ExecuteActivity(ctx, activities.LeaderBoardActivity, getPlayers).Get(ctx, &scoreboard)
 	if err != nil {

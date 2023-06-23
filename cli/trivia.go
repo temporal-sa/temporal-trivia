@@ -117,7 +117,7 @@ func main() {
 		workflowId := startGame(c, chatGptKey, category, answerTimeout, resultTimeout, questions)
 
 		failureCounter := 0
-		for i := 0; i < questions; {
+		for i := 0; i < questions; i++ {
 			for {
 				if failureCounter > 10 {
 					log.Fatalln("Error exceeded number of failures")
@@ -129,7 +129,6 @@ func main() {
 
 				if gameProgress.CurrentQuestion > i {
 					fmt.Println("Time is up next question...")
-					i++
 					break
 				}
 
@@ -165,7 +164,6 @@ func main() {
 					}
 
 					fmt.Println("Correct Answer: " + questions[i].Answer + "\n")
-					i++
 
 					// sleep for showing results
 					time.Sleep(time.Duration(resultTimeout) * time.Second)

@@ -35,7 +35,7 @@ func (gp *GameProgress) runGame(ctx workflow.Context, workflowInput resources.Ga
 		answerSelector.AddFuture(timer, func(f workflow.Future) {
 			err := f.Get(ctx, nil)
 			if err == nil {
-				logger.Info("Time limit for question has exceeded the limit of " + time.Duration(workflowInput.AnswerTimeLimit).String() + " seconds")
+				logger.Info("Time limit for question has exceeded the limit of" + intToString(workflowInput.AnswerTimeLimit) + " seconds")
 				timerFired = true
 			}
 		})

@@ -1,8 +1,6 @@
 package triviagame
 
 import (
-	"strconv"
-
 	. "github.com/ktenzer/temporal-trivia/resources"
 	"go.temporal.io/sdk/workflow"
 )
@@ -49,6 +47,6 @@ func (signal *AnswerSignal) answerSignal(ctx workflow.Context, answerSelector wo
 	answerSignalChan := workflow.GetSignalChannel(ctx, AnswerSignalChannelName)
 	answerSelector.AddReceive(answerSignalChan, func(channel workflow.ReceiveChannel, more bool) {
 		channel.Receive(ctx, &signal)
-		log.Info("Recieved signal Action: " + signal.Action + " Player: " + signal.Player + " Question: " + strconv.Itoa(signal.Question) + " Answer: " + signal.Answer)
+		log.Info("Recieved signal Action: " + signal.Action + " Player: " + signal.Player + " Question: " + intToString(signal.Question) + " Answer: " + signal.Answer)
 	})
 }

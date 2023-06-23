@@ -5,7 +5,6 @@ const AddPlayerSignalChannelName = "add-player-signal"
 const AnswerSignalChannelName = "answer-signal"
 
 func SetDefaults(workflowInput GameWorkflowInput) GameWorkflowInput {
-
 	if workflowInput.AnswerTimeLimit == 0 {
 		workflowInput.AnswerTimeLimit = 60
 	}

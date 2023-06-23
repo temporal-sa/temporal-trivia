@@ -21,7 +21,7 @@ func (ps *PlayerSignal) addPlayers(ctx workflow.Context, workflowInput resources
 	addPlayerSelector.AddFuture(cancelTimer, func(f workflow.Future) {
 		err := f.Get(ctx, nil)
 		if err == nil {
-			logger.Info("Time limit for starting game has been exceeded " + time.Duration(workflowInput.StartTimeLimit).String() + " seconds")
+			logger.Info("Time limit for starting game has been exceeded " + intToString(workflowInput.StartTimeLimit) + " seconds")
 			cancelTimerFired = true
 		}
 	})
@@ -66,7 +66,12 @@ func (ps *PlayerSignal) addPlayers(ctx workflow.Context, workflowInput resources
 		return false
 	})
 
-	return false
+	// return back to workflow
+	if cancelTimerFired {
+		return true
+	} else {
+		return false
+	}
 }
 
 func boolPointer(b bool) *bool {

@@ -49,7 +49,7 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 	var ps PlayerSignal
 	isCancelled := ps.addPlayers(ctx, workflowInput, getPlayers)
 	if isCancelled {
-		return errors.New("Time limit for starting game has been exceeded!")
+		return errors.New("Time limit of " + intToString(workflowInput.StartTimeLimit) + workflowInput.Category + " seconds for starting game has been exceeded!")
 	}
 
 	// Set Category if not provided

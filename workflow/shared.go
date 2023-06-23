@@ -2,6 +2,7 @@ package triviagame
 
 import (
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/ktenzer/temporal-trivia/resources"
@@ -68,4 +69,8 @@ func setDefaultLocalActivityOptions() workflow.LocalActivityOptions {
 	}
 
 	return ao
+}
+
+func intToString(i int) string {
+	return strconv.Itoa(i)
 }

@@ -9,15 +9,13 @@ import (
 	_ "go.temporal.io/sdk/contrib/tools/workflowcheck/determinism"
 )
 
-func (ps *PlayerSignal) runPlayerLogic(ctx workflow.Context, workflowInput resources.GameWorkflowInput, getPlayers *map[string]resources.Player) bool {
+func (ps *PlayerSignal) addPlayers(ctx workflow.Context, workflowInput resources.GameWorkflowInput, getPlayers *map[string]resources.Player) bool {
 	logger := workflow.GetLogger(ctx)
 
 	// Async timer to cancel game if not started
 	cancelTimer := workflow.NewTimer(ctx, time.Duration(workflowInput.StartTimeLimit)*time.Second)
 	addPlayerSelector := workflow.NewSelector(ctx)
 	ps.playerSignal(ctx, addPlayerSelector)
-
-	//ps := &signal.playerSignal
 
 	var cancelTimerFired bool
 	addPlayerSelector.AddFuture(cancelTimer, func(f workflow.Future) {

@@ -47,7 +47,7 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 	// Add players to game using signal and wait for start game signal
 	//var gs GameSignal
 	var ps PlayerSignal
-	isCancelled := ps.runPlayerLogic(ctx, workflowInput, getPlayers)
+	isCancelled := ps.addPlayers(ctx, workflowInput, getPlayers)
 	if isCancelled {
 		return errors.New("Time limit for starting game has been exceeded!")
 	}
@@ -71,7 +71,7 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 		return err
 	}
 
-	getQuestions, getPlayers = gp.runGameLogic(ctx, workflowInput, getQuestions, getPlayers)
+	getQuestions, getPlayers = gp.runGame(ctx, workflowInput, getQuestions, getPlayers)
 
 	// sort scoreboard
 	var scoreboard []resources.ScoreBoard

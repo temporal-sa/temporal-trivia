@@ -10,7 +10,7 @@ import (
 	_ "go.temporal.io/sdk/contrib/tools/workflowcheck/determinism"
 )
 
-func (gp *GameProgress) runGameLogic(ctx workflow.Context, workflowInput resources.GameWorkflowInput, getQuestions *map[int]resources.Result,
+func (gp *GameProgress) runGame(ctx workflow.Context, workflowInput resources.GameWorkflowInput, getQuestions *map[int]resources.Result,
 	getPlayers *map[string]resources.Player) (*map[int]resources.Result, *map[string]resources.Player) {
 
 	logger := workflow.GetLogger(ctx)

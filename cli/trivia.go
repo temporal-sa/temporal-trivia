@@ -66,14 +66,10 @@ func main() {
 		}
 
 		if getopt.IsSet("answer-timeout") != true {
-			answerTimeout = 1000
-		} else {
 			answerTimeout = *optAnswerTimeout
 		}
 
 		if getopt.IsSet("result-timeout") != true {
-			resultTimeout = 10
-		} else {
 			resultTimeout = *optResultTimeout
 		}
 

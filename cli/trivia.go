@@ -25,7 +25,7 @@ func main() {
 	optStartGame := getopt.BoolLong("start-game", 's', "", "Start a new game")
 	optGameCategory := getopt.StringLong("category", 'c', "", "Game category general|sports|movies|geography|etc")
 	optNumberOfQuestions := getopt.IntLong("questions", 'q', 5, "Total number of questions")
-	optAnswerTimeout := getopt.IntLong("answer-timeout", 't', 5, "Time limit per answer phase")
+	optAnswerTimeout := getopt.IntLong("answer-timeout", 't', 60, "Time limit per answer phase")
 	optResultTimeout := getopt.IntLong("result-timeout", 'r', 5, "Time limit per result phase")
 	optMtlsCert := getopt.StringLong("mtls-cert", 'm', "", "Path to mtls cert /path/to/ca.pem")
 	optMtlsKey := getopt.StringLong("mtls-key", 'k', "", "Path to mtls key /path/to/ca.key")
@@ -55,7 +55,7 @@ func main() {
 	var temporalEndpoint string
 	var temporalNamespace string
 	if *optStartGame {
-		if getopt.IsSet("category") != true {
+		if getopt.IsSet("category") == true {
 			category = *optGameCategory
 		}
 
@@ -65,11 +65,11 @@ func main() {
 			questions = *optNumberOfQuestions
 		}
 
-		if getopt.IsSet("answer-timeout") != true {
+		if getopt.IsSet("answer-timeout") == true {
 			answerTimeout = *optAnswerTimeout
 		}
 
-		if getopt.IsSet("result-timeout") != true {
+		if getopt.IsSet("result-timeout") == true {
 			resultTimeout = *optResultTimeout
 		}
 
@@ -127,7 +127,7 @@ func main() {
 					fmt.Println("Error sending the Query", err)
 				}
 
-				if gameProgress.CurrentQuestion > i+1 {
+				if gameProgress.CurrentQuestion > i {
 					fmt.Println("Time is up next question...")
 					i++
 					break

@@ -38,12 +38,12 @@ func AddPlayerWorkflow(ctx workflow.Context, workflowInput resources.AddPlayerWo
 	// TODO: Add Activity to check player name is language compliant
 
 	// Add player via signal
-	addPlayerSignal := GameSignal{
+	addPlayerSignal := PlayerSignal{
 		Action: "Player",
 		Player: workflowInput.Player,
 	}
 
-	err = workflow.SignalExternalWorkflow(ctx, workflowInput.GameWorkflowId, "", "start-game-signal", addPlayerSignal).Get(ctx, nil)
+	err = workflow.SignalExternalWorkflow(ctx, workflowInput.GameWorkflowId, "", "add-player-signal", addPlayerSignal).Get(ctx, nil)
 	if err != nil {
 		return err
 	}

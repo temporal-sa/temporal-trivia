@@ -9,13 +9,15 @@ import (
 	_ "go.temporal.io/sdk/contrib/tools/workflowcheck/determinism"
 )
 
-func (gs *GameSignal) runPlayerLogic(ctx workflow.Context, workflowInput resources.GameWorkflowInput, getPlayers map[string]resources.Player) bool {
+func (ps *PlayerSignal) runPlayerLogic(ctx workflow.Context, workflowInput resources.GameWorkflowInput, getPlayers *map[string]resources.Player) bool {
 	logger := workflow.GetLogger(ctx)
 
 	// Async timer to cancel game if not started
 	cancelTimer := workflow.NewTimer(ctx, time.Duration(workflowInput.StartTimeLimit)*time.Second)
+	addPlayerSelector := workflow.NewSelector(ctx)
+	ps.playerSignal(ctx, addPlayerSelector)
 
-	addPlayerSelector := gs.gameSignal(ctx)
+	//ps := &signal.playerSignal
 
 	var cancelTimerFired bool
 	addPlayerSelector.AddFuture(cancelTimer, func(f workflow.Future) {
@@ -26,26 +28,49 @@ func (gs *GameSignal) runPlayerLogic(ctx workflow.Context, workflowInput resourc
 		}
 	})
 
-	for {
-		addPlayerSelector.Select(ctx)
+	isStartGame := boolPointer(false)
+	workflow.Go(ctx, func(gCtx workflow.Context) {
+		gs := GameSignal{}
 
-		if gs.Action == "Player" && gs.Player != "" {
-			if _, ok := getPlayers[gs.Player]; !ok {
-				getPlayers[gs.Player] = resources.Player{
-					Score: 0,
+		startGameSelector := workflow.NewSelector(gCtx)
+		gs.gameSignal(ctx, startGameSelector)
+
+		startGameSelector.Select(gCtx)
+
+		if gs.Action == "StartGame" {
+			*isStartGame = true
+		}
+	})
+
+	workflow.Go(ctx, func(gCtx workflow.Context) {
+		for {
+			addPlayerSelector.Select(gCtx)
+
+			if ps.Action == "Player" && ps.Player != "" {
+				if _, ok := (*getPlayers)[ps.Player]; !ok {
+					(*getPlayers)[ps.Player] = resources.Player{
+						Score: 0,
+					}
 				}
 			}
 		}
+	})
 
-		// Wait for start of game via signal
-		if gs.Action == "StartGame" {
-			break
+	workflow.Await(ctx, func() bool {
+		if *isStartGame {
+			return true
 		}
 
 		if cancelTimerFired {
 			return true
 		}
-	}
+
+		return false
+	})
 
 	return false
+}
+
+func boolPointer(b bool) *bool {
+	return &b
 }

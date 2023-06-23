@@ -46,10 +46,18 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 
 	// Add players to game using signal and wait for start game signal
 	//var gs GameSignal
-	var gs GameSignal
-	isCancelled := gs.runPlayerLogic(ctx, workflowInput, getPlayers)
+	var ps PlayerSignal
+	isCancelled := ps.runPlayerLogic(ctx, workflowInput, getPlayers)
 	if isCancelled {
 		return errors.New("Time limit for starting game has been exceeded!")
+	}
+
+	// Set Category if not provided
+	if workflowInput.Category == "" {
+		var category string
+		laCtx := workflow.WithLocalActivityOptions(ctx, setDefaultLocalActivityOptions())
+		workflow.ExecuteLocalActivity(laCtx, activities.GetRandomCategoryActivity).Get(laCtx, &category)
+		workflowInput.Category = category
 	}
 
 	// Set game progress to generation questions phase

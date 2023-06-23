@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ktenzer/temporal-trivia/resources"
+	. "github.com/ktenzer/temporal-trivia/resources"
 	triviagame "github.com/ktenzer/temporal-trivia/workflow"
 	"go.temporal.io/sdk/client"
 )
@@ -107,7 +108,7 @@ func main() {
 				Answer:   randomLetter,
 			}
 
-			err = AnswerSignal(c, answerSignal, gameWorkflowId, "answer-signal")
+			err = AnswerSignal(c, answerSignal, gameWorkflowId, AnswerSignalChannelName)
 			if err != nil {
 				log.Fatalln("Error sending the Signal", err)
 			}

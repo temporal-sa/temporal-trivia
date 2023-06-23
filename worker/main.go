@@ -21,6 +21,7 @@ func main() {
 
 	w.RegisterWorkflow(workflow.TriviaGameWorkflow)
 	w.RegisterWorkflow(workflow.AddPlayerWorkflow)
+	w.RegisterActivity(activities.GetRandomCategoryActivity)
 	w.RegisterActivity(activities.TriviaQuestionActivity)
 	w.RegisterActivity(activities.LeaderBoardActivity)
 	w.RegisterActivity(activities.QueryPlayerActivity)

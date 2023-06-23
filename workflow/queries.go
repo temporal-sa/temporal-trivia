@@ -12,7 +12,7 @@ type GameProgress struct {
 }
 
 // Setup query handler for players
-func initGetPlayersQuery(ctx workflow.Context) (map[string]resources.Player, error) {
+func initGetPlayersQuery(ctx workflow.Context) (*map[string]resources.Player, error) {
 	log := workflow.GetLogger(ctx)
 	getPlayers := make(map[string]resources.Player)
 
@@ -21,14 +21,14 @@ func initGetPlayersQuery(ctx workflow.Context) (map[string]resources.Player, err
 	})
 	if err != nil {
 		log.Error("SetQueryHandler failed for getPlayers: " + err.Error())
-		return getPlayers, err
+		return &getPlayers, err
 	}
 
-	return getPlayers, nil
+	return &getPlayers, nil
 }
 
 // Setup query handler for gathering game questions
-func initGetQuestionsQuery(ctx workflow.Context) (map[int]resources.Result, error) {
+func initGetQuestionsQuery(ctx workflow.Context) (*map[int]resources.Result, error) {
 	log := workflow.GetLogger(ctx)
 	getQuestions := make(map[int]resources.Result)
 
@@ -37,10 +37,10 @@ func initGetQuestionsQuery(ctx workflow.Context) (map[int]resources.Result, erro
 	})
 	if err != nil {
 		log.Error("SetQueryHandler failed for getQuestions: " + err.Error())
-		return getQuestions, err
+		return &getQuestions, err
 	}
 
-	return getQuestions, nil
+	return &getQuestions, nil
 }
 
 // Setup query handler for gathering game progress

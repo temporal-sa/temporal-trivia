@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/ktenzer/temporal-trivia/resources"
+	. "github.com/ktenzer/temporal-trivia/resources"
 	triviagame "github.com/ktenzer/temporal-trivia/workflow"
 	"github.com/pborman/getopt/v2"
 	"go.temporal.io/sdk/client"
@@ -55,8 +56,6 @@ func main() {
 	var temporalNamespace string
 	if *optStartGame {
 		if getopt.IsSet("category") != true {
-			category = "general"
-		} else {
 			category = *optGameCategory
 		}
 
@@ -164,7 +163,7 @@ func main() {
 						Answer:   answer,
 					}
 
-					err = sendAnswerSignal(c, gameSignal, workflowId, "answer-signal")
+					err = sendAnswerSignal(c, gameSignal, workflowId, AnswerSignalChannelName)
 					if err != nil {
 						fmt.Println("Error sending the Signal", err)
 					}
@@ -244,12 +243,12 @@ func startGame(c client.Client, chatGptKey, category string, answerTimeout, resu
 	}
 
 	// Add player
-	addPlayerSignal := triviagame.GameSignal{
+	addPlayerSignal := triviagame.PlayerSignal{
 		Action: "Player",
 		Player: "player0",
 	}
 
-	err = sendGameSignal(c, addPlayerSignal, workflowId, "start-game-signal")
+	err = sendAddPlayerSignal(c, addPlayerSignal, workflowId, AddPlayerSignalChannelName)
 	if err != nil {
 		log.Fatalln("Error sending the Signal", err)
 	}
@@ -259,7 +258,7 @@ func startGame(c client.Client, chatGptKey, category string, answerTimeout, resu
 		Action: "StartGame",
 	}
 
-	err = sendGameSignal(c, startGameSignal, workflowId, "start-game-signal")
+	err = sendStartGameSignal(c, startGameSignal, workflowId, GameSignalChannelName)
 	if err != nil {
 		log.Fatalln("Error sending the Signal", err)
 	}
@@ -315,7 +314,17 @@ func sendProgressQuery(c client.Client, workflowId, query string) (triviagame.Ga
 	return result, nil
 }
 
-func sendGameSignal(c client.Client, signal triviagame.GameSignal, workflowId, signalType string) error {
+func sendStartGameSignal(c client.Client, signal triviagame.GameSignal, workflowId, signalType string) error {
+
+	err := c.SignalWorkflow(context.Background(), workflowId, "", signalType, signal)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func sendAddPlayerSignal(c client.Client, signal triviagame.PlayerSignal, workflowId, signalType string) error {
 
 	err := c.SignalWorkflow(context.Background(), workflowId, "", signalType, signal)
 	if err != nil {

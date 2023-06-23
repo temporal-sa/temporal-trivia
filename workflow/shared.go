@@ -11,11 +11,9 @@ import (
 )
 
 // Detect answer duplication
-func isAnswerDuplicate(submissions map[string]resources.Submission, player string) bool {
-	for submittedPlayer, _ := range submissions {
-		if player == submittedPlayer {
-			return true
-		}
+func isAnswerDuplicate(submissionMap map[string]resources.Submission, player string) bool {
+	if _, ok := submissionMap[player]; ok {
+		return true
 	}
 	return false
 }

@@ -3,10 +3,15 @@ package triviagame
 import (
 	"strconv"
 
+	. "github.com/ktenzer/temporal-trivia/resources"
 	"go.temporal.io/sdk/workflow"
 )
 
 type GameSignal struct {
+	Action string `json:"action"`
+}
+
+type PlayerSignal struct {
 	Action string `json:"action"`
 	Player string `json:"player"`
 }
@@ -18,29 +23,32 @@ type AnswerSignal struct {
 	Answer   string `json:"answer"`
 }
 
-func (signal *GameSignal) gameSignal(ctx workflow.Context) workflow.Selector {
+func (signal *GameSignal) gameSignal(ctx workflow.Context, startGameSelector workflow.Selector) {
 	log := workflow.GetLogger(ctx)
 
-	var addPlayerSelector workflow.Selector
-	addPlayerSignalChan := workflow.GetSignalChannel(ctx, "start-game-signal")
-	addPlayerSelector = workflow.NewSelector(ctx)
+	addPlayerSignalChan := workflow.GetSignalChannel(ctx, GameSignalChannelName)
+	startGameSelector.AddReceive(addPlayerSignalChan, func(channel workflow.ReceiveChannel, more bool) {
+		channel.Receive(ctx, &signal)
+		log.Info("Recieved signal Action: " + signal.Action)
+	})
+}
+
+func (signal *PlayerSignal) playerSignal(ctx workflow.Context, addPlayerSelector workflow.Selector) {
+	log := workflow.GetLogger(ctx)
+
+	addPlayerSignalChan := workflow.GetSignalChannel(ctx, AddPlayerSignalChannelName)
 	addPlayerSelector.AddReceive(addPlayerSignalChan, func(channel workflow.ReceiveChannel, more bool) {
 		channel.Receive(ctx, &signal)
 		log.Info("Recieved signal Action: " + signal.Action + " Player: " + signal.Player)
 	})
-
-	return addPlayerSelector
 }
 
-func (signal *AnswerSignal) answerSignal(ctx workflow.Context) workflow.Selector {
+func (signal *AnswerSignal) answerSignal(ctx workflow.Context, answerSelector workflow.Selector) {
 	log := workflow.GetLogger(ctx)
 
-	answerSignalChan := workflow.GetSignalChannel(ctx, "answer-signal")
-	answerSelector := workflow.NewSelector(ctx)
+	answerSignalChan := workflow.GetSignalChannel(ctx, AnswerSignalChannelName)
 	answerSelector.AddReceive(answerSignalChan, func(channel workflow.ReceiveChannel, more bool) {
 		channel.Receive(ctx, &signal)
 		log.Info("Recieved signal Action: " + signal.Action + " Player: " + signal.Player + " Question: " + strconv.Itoa(signal.Question) + " Answer: " + signal.Answer)
 	})
-
-	return answerSelector
 }

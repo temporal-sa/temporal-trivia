@@ -1,18 +1,13 @@
 package resources
 
-import (
-	"math/rand"
-	"time"
-)
+const GameSignalChannelName = "start-game-signal"
+const AddPlayerSignalChannelName = "add-player-signal"
+const AnswerSignalChannelName = "answer-signal"
 
 func SetDefaults(workflowInput GameWorkflowInput) GameWorkflowInput {
 
 	if workflowInput.AnswerTimeLimit == 0 {
 		workflowInput.AnswerTimeLimit = 60
-	}
-
-	if workflowInput.Category == "" {
-		workflowInput.Category = getRandomCategory()
 	}
 
 	if workflowInput.NumberOfPlayers == 0 {
@@ -32,13 +27,4 @@ func SetDefaults(workflowInput GameWorkflowInput) GameWorkflowInput {
 	}
 
 	return workflowInput
-}
-
-func getRandomCategory() string {
-	rand.Seed(time.Now().UnixNano())
-
-	keys := []string{"General", "Sports", "Science", "Travel", "Geography", "Capitols", "Authors", "Books", "Animals", "Plants", "Foods", "Cities"}
-	randomIndex := rand.Intn(len(keys))
-
-	return keys[randomIndex]
 }

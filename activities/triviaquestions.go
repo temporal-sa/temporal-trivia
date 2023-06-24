@@ -87,7 +87,7 @@ func populateGameMap(questions []string) map[int]resources.Result {
 		answersMap := parsePossibleAnswers(question)
 		result.MultipleChoiceMap = answersMap
 
-		gameMap[i] = result
+		gameMap[i+1] = result
 	}
 
 	return gameMap

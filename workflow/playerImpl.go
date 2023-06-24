@@ -9,11 +9,11 @@ import (
 	_ "go.temporal.io/sdk/contrib/tools/workflowcheck/determinism"
 )
 
-func (ps *PlayerSignal) addPlayers(ctx workflow.Context, workflowInput resources.GameWorkflowInput, getPlayers *map[string]resources.Player) bool {
+func (ps *PlayerSignal) addPlayers(ctx workflow.Context, gameConfiguration *resources.GameConfiguration, getPlayers *map[string]resources.Player) bool {
 	logger := workflow.GetLogger(ctx)
 
 	// Async timer to cancel game if not started
-	cancelTimer := workflow.NewTimer(ctx, time.Duration(workflowInput.StartTimeLimit)*time.Second)
+	cancelTimer := workflow.NewTimer(ctx, time.Duration(gameConfiguration.StartTimeLimit)*time.Second)
 	addPlayerSelector := workflow.NewSelector(ctx)
 	ps.playerSignal(ctx, addPlayerSelector)
 
@@ -21,7 +21,7 @@ func (ps *PlayerSignal) addPlayers(ctx workflow.Context, workflowInput resources
 	addPlayerSelector.AddFuture(cancelTimer, func(f workflow.Future) {
 		err := f.Get(ctx, nil)
 		if err == nil {
-			logger.Info("Time limit for starting game has been exceeded " + intToString(workflowInput.StartTimeLimit) + " seconds")
+			logger.Info("Time limit for starting game has been exceeded " + intToString(gameConfiguration.StartTimeLimit) + " seconds")
 			cancelTimerFired = true
 		}
 	})

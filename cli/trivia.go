@@ -118,6 +118,7 @@ func main() {
 
 		failureCounter := 0
 		for i := 0; i < questions; i++ {
+			questionNumber := i + 1
 			for {
 				if failureCounter > 10 {
 					log.Fatalln("Error exceeded number of failures")
@@ -127,7 +128,7 @@ func main() {
 					fmt.Println("Error sending the Query", err)
 				}
 
-				if gameProgress.CurrentQuestion > i {
+				if gameProgress.CurrentQuestion > i+1 {
 					fmt.Println("Time is up next question...")
 					break
 				}
@@ -137,16 +138,16 @@ func main() {
 					fmt.Println("Error sending the Query", err)
 				}
 
-				if questions[i].Question != "" {
-					fmt.Println(questions[i].Question)
-					keys := make([]string, 0, len(questions[i].MultipleChoiceMap))
-					for k := range questions[i].MultipleChoiceMap {
+				if questions[questionNumber].Question != "" {
+					fmt.Println(questions[questionNumber].Question)
+					keys := make([]string, 0, len(questions[questionNumber].MultipleChoiceMap))
+					for k := range questions[questionNumber].MultipleChoiceMap {
 						//fmt.Println(key + " " + value)
 						keys = append(keys, k)
 					}
 					sort.Strings(keys)
 					for _, k := range keys {
-						fmt.Println(k + " " + questions[i].MultipleChoiceMap[k])
+						fmt.Println(k + " " + questions[questionNumber].MultipleChoiceMap[k])
 					}
 
 					answer := getPlayerResponse()
@@ -154,7 +155,7 @@ func main() {
 					gameSignal := triviagame.AnswerSignal{
 						Action:   "Answer",
 						Player:   "player0",
-						Question: i,
+						Question: questionNumber,
 						Answer:   answer,
 					}
 
@@ -163,7 +164,7 @@ func main() {
 						fmt.Println("Error sending the Signal", err)
 					}
 
-					fmt.Println("Correct Answer: " + questions[i].Answer + "\n")
+					fmt.Println("Correct Answer: " + questions[questionNumber].Answer + "\n")
 
 					// sleep for showing results
 					time.Sleep(time.Duration(resultTimeout) * time.Second)

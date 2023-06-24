@@ -10,7 +10,7 @@ import (
 	_ "go.temporal.io/sdk/contrib/tools/workflowcheck/determinism"
 )
 
-func (gp *GameProgress) runGame(ctx workflow.Context, workflowInput resources.GameWorkflowInput, getQuestions *map[int]resources.Result,
+func (gp *GameProgress) runGame(ctx workflow.Context, gameConfiguration *resources.GameConfiguration, getQuestions *map[int]resources.Result,
 	getPlayers *map[string]resources.Player) (*map[int]resources.Result, *map[string]resources.Player) {
 
 	logger := workflow.GetLogger(ctx)
@@ -19,23 +19,23 @@ func (gp *GameProgress) runGame(ctx workflow.Context, workflowInput resources.Ga
 	answerSelector := workflow.NewSelector(ctx)
 	as.answerSignal(ctx, answerSelector)
 
-	var questionCount int = 0
+	var questionCount int = 1
 	keys := getSortedGameMap(*getQuestions)
 
 	for _, key := range keys {
-		gp.CurrentQuestion = questionCount + 1
+		gp.CurrentQuestion = questionCount
 
 		// Set game progress to answer phase
 		gp.Stage = "answers"
 
 		// Async timer for amount of time to receive answers
-		timer := workflow.NewTimer(ctx, time.Duration(workflowInput.AnswerTimeLimit)*time.Second)
+		timer := workflow.NewTimer(ctx, time.Duration(gameConfiguration.AnswerTimeLimit)*time.Second)
 
 		var timerFired bool
 		answerSelector.AddFuture(timer, func(f workflow.Future) {
 			err := f.Get(ctx, nil)
 			if err == nil {
-				logger.Info("Time limit for question has exceeded the limit of" + intToString(workflowInput.AnswerTimeLimit) + " seconds")
+				logger.Info("Time limit for question has exceeded the limit of" + intToString(gameConfiguration.AnswerTimeLimit) + " seconds")
 				timerFired = true
 			}
 		})
@@ -44,7 +44,7 @@ func (gp *GameProgress) runGame(ctx workflow.Context, workflowInput resources.Ga
 		result := (*getQuestions)[key]
 		var submissionsMap = make(map[string]resources.Submission)
 
-		for a := 0; a < workflowInput.NumberOfPlayers; a++ {
+		for a := 0; a < gameConfiguration.NumberOfPlayers; a++ {
 			// continue to next question if timer fires
 			if timerFired {
 				break
@@ -90,7 +90,7 @@ func (gp *GameProgress) runGame(ctx workflow.Context, workflowInput resources.Ga
 		gp.Stage = "result"
 
 		// Sleep allowing time to display results
-		workflow.Sleep(ctx, time.Duration(workflowInput.ResultTimeLimit)*time.Second)
+		workflow.Sleep(ctx, time.Duration(gameConfiguration.ResultTimeLimit)*time.Second)
 
 		questionCount++
 	}

@@ -71,6 +71,7 @@ func setDefaultLocalActivityOptions() workflow.LocalActivityOptions {
 	return ao
 }
 
+// Convert int to string
 func intToString(i int) string {
 	return strconv.Itoa(i)
 }

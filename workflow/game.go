@@ -17,8 +17,8 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Trivia Game Started")
 
-	// Set workflow defaults
-	workflowInput = resources.SetDefaults(workflowInput)
+	// Game configuration
+	gameConfiguration := resources.NewGameConfigurationFromWorkflowInput(workflowInput)
 
 	// Activity options
 	ctx = workflow.WithActivityOptions(ctx, setDefaultActivityOptions())
@@ -37,31 +37,32 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 
 	// Initialize game progress state machine, exporting as query
 	var gp GameProgress
-	gp, err = gp.initGetProgressQuery(ctx, workflowInput.NumberOfQuestions)
+	gp, err = gp.initGetProgressQuery(ctx, gameConfiguration.NumberOfQuestions)
 	if err != nil {
 		return err
 	}
 
-	// Add players to game using signal and wait for start game signal
+	// Add players to game using signal and wait for start game signal.
+	// If game is not started before start game timeout, workflow will fail.
 	var ps PlayerSignal
-	isCancelled := ps.addPlayers(ctx, workflowInput, getPlayers)
+	isCancelled := ps.addPlayers(ctx, gameConfiguration, getPlayers)
 	if isCancelled {
-		return errors.New("Time limit of " + intToString(workflowInput.StartTimeLimit) + workflowInput.Category + " seconds for starting game has been exceeded!")
+		return errors.New("Time limit of " + intToString(gameConfiguration.StartTimeLimit) + gameConfiguration.Category + " seconds for starting game has been exceeded!")
 	}
 
-	// Set trivia question category if not provided
-	if workflowInput.Category == "" {
+	// Set trivia question category randomly, if category is empty
+	if gameConfiguration.Category == "" {
 		var category string
 		laCtx := workflow.WithLocalActivityOptions(ctx, setDefaultLocalActivityOptions())
 		workflow.ExecuteLocalActivity(laCtx, activities.GetRandomCategoryActivity).Get(laCtx, &category)
-		workflowInput.Category = category
+		gameConfiguration.Category = category
 	}
 
 	// Update game progress stage
 	gp.Stage = "questions"
 
 	// Run activity to start game and pre-fetch trivia questions and answers
-	activityInput := triviaQuestionsActivityInput(workflowInput.Category, workflowInput.NumberOfQuestions)
+	activityInput := triviaQuestionsActivityInput(gameConfiguration.Category, gameConfiguration.NumberOfQuestions)
 	err = workflow.ExecuteActivity(ctx, activities.TriviaQuestionActivity, activityInput).Get(ctx, &getQuestions)
 	if err != nil {
 		logger.Error("Activity failed.", "Error", err)
@@ -69,7 +70,7 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 	}
 
 	// Run the game loop
-	getQuestions, getPlayers = gp.runGame(ctx, workflowInput, getQuestions, getPlayers)
+	getQuestions, getPlayers = gp.runGame(ctx, gameConfiguration, getQuestions, getPlayers)
 
 	// Provide sorted scoreboard results
 	var scoreboard []resources.ScoreBoard

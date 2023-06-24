@@ -29,7 +29,8 @@ func main() {
 
 	// Set input using defaults
 	gameWorkflowInput := resources.GameWorkflowInput{}
-	gameWorkflowInput = resources.SetDefaults(gameWorkflowInput)
+	gameWorkflowInput.NumberOfPlayers = 2
+	gameWorkflowInput.NumberOfQuestions = 5
 
 	gameWorkflow, err := c.ExecuteWorkflow(context.Background(), gameWorkflowOptions, triviagame.TriviaGameWorkflow, gameWorkflowInput)
 	if err != nil {

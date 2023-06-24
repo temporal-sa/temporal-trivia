@@ -4,26 +4,87 @@ const GameSignalChannelName = "start-game-signal"
 const AddPlayerSignalChannelName = "add-player-signal"
 const AnswerSignalChannelName = "answer-signal"
 
-func SetDefaults(workflowInput GameWorkflowInput) GameWorkflowInput {
-	if workflowInput.AnswerTimeLimit == 0 {
-		workflowInput.AnswerTimeLimit = 60
-	}
+type GameConfiguration struct {
+	Category          string `json:"category"`
+	NumberOfQuestions int    `json:"numberOfQuestions"`
+	NumberOfPlayers   int    `json:"numberOfPlayers"`
+	AnswerTimeLimit   int    `json:"answerTimeLimit"`
+	StartTimeLimit    int    `json:"startTimeLimit"`
+	ResultTimeLimit   int    `json:"resultTimeLimit"`
+}
 
-	if workflowInput.NumberOfPlayers == 0 {
-		workflowInput.NumberOfPlayers = 2
-	}
+type GameConfigurationOption func(*GameConfiguration)
 
-	if workflowInput.NumberOfQuestions == 0 {
-		workflowInput.NumberOfQuestions = 5
+func NewGameConfiguration(opts []GameConfigurationOption) *GameConfiguration {
+	g := &GameConfiguration{
+		NumberOfQuestions: 5,
+		NumberOfPlayers:   2,
+		AnswerTimeLimit:   300,
+		StartTimeLimit:    300,
+		ResultTimeLimit:   10,
 	}
-
-	if workflowInput.ResultTimeLimit == 0 {
-		workflowInput.ResultTimeLimit = 10
+	for _, o := range opts {
+		o(g)
 	}
+	return g
+}
 
-	if workflowInput.StartTimeLimit == 0 {
-		workflowInput.StartTimeLimit = 300
+func NewGameConfigurationFromWorkflowInput(input GameWorkflowInput) *GameConfiguration {
+
+	opts := []GameConfigurationOption{}
+	if input.Category != "" {
+		opts = append(opts, WithCategory(input.Category))
 	}
+	if input.AnswerTimeLimit > 0 {
+		opts = append(opts, WithAnswerTimeLimit(input.AnswerTimeLimit))
+	}
+	if input.NumberOfPlayers > 0 {
+		opts = append(opts, WithNumberOfPlayers(input.NumberOfPlayers))
+	}
+	if input.NumberOfQuestions > 0 {
+		opts = append(opts, WithNUmberOfQuestions(input.NumberOfQuestions))
+	}
+	if input.ResultTimeLimit > 0 {
+		opts = append(opts, WithResultTimeout(input.ResultTimeLimit))
+	}
+	if input.StartTimeLimit > 0 {
+		opts = append(opts, WithStartTimeout(input.StartTimeLimit))
+	}
+	return NewGameConfiguration(opts)
+}
 
-	return workflowInput
+func WithAnswerTimeLimit(n int) GameConfigurationOption {
+	return func(cfg *GameConfiguration) {
+		cfg.AnswerTimeLimit = n
+	}
+}
+
+func WithNumberOfPlayers(n int) GameConfigurationOption {
+	return func(cfg *GameConfiguration) {
+		cfg.NumberOfPlayers = n
+	}
+}
+
+func WithNUmberOfQuestions(n int) GameConfigurationOption {
+	return func(cfg *GameConfiguration) {
+		cfg.NumberOfQuestions = n
+	}
+}
+
+func WithResultTimeout(n int) GameConfigurationOption {
+	return func(cfg *GameConfiguration) {
+		cfg.ResultTimeLimit = n
+	}
+}
+
+func WithStartTimeout(n int) GameConfigurationOption {
+	return func(cfg *GameConfiguration) {
+		cfg.StartTimeLimit = n
+	}
+}
+
+func WithCategory(s string) GameConfigurationOption {
+	return func(cfg *GameConfiguration) {
+		cfg.Category = s
+	}
 }

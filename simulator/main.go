@@ -81,7 +81,8 @@ func main() {
 
 	// loop through number of questions and check with game stage to provide answers
 	for i := 0; i < gameWorkflowInput.NumberOfQuestions; i++ {
-		log.Println("Game is on question " + strconv.Itoa(i) + " of " + strconv.Itoa(gameWorkflowInput.NumberOfQuestions))
+		questionNumber := i + 1
+		log.Println("Game is on question " + strconv.Itoa(questionNumber) + " of " + strconv.Itoa(gameWorkflowInput.NumberOfQuestions))
 
 		for {
 			gameProgress, err := getGameProgress(c, gameWorkflowId)
@@ -91,7 +92,7 @@ func main() {
 
 			log.Println("Game stage is " + gameProgress.Stage)
 
-			if gameProgress.CurrentQuestion == i+1 && gameProgress.Stage == "answers" {
+			if gameProgress.CurrentQuestion == questionNumber && gameProgress.Stage == "answers" {
 				break
 			}
 			time.Sleep(1 * time.Second)
@@ -105,7 +106,7 @@ func main() {
 			answerSignal := triviagame.AnswerSignal{
 				Action:   "Answer",
 				Player:   "player" + strconv.Itoa(p),
-				Question: i,
+				Question: questionNumber,
 				Answer:   randomLetter,
 			}
 

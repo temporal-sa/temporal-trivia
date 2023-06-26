@@ -5,8 +5,11 @@ go 1.19
 require (
 	github.com/google/uuid v1.3.0
 	github.com/pborman/getopt/v2 v2.1.0
+	github.com/prometheus/client_golang v1.15.1
 	github.com/sashabaranov/go-openai v1.5.7
+	github.com/uber-go/tally/v4 v4.1.7
 	go.temporal.io/sdk v1.21.1
+	go.temporal.io/sdk/contrib/tally v0.2.0
 	go.temporal.io/sdk/contrib/tools/workflowcheck v0.0.0-20230328164709-88a40de39c33
 )
 
@@ -25,17 +28,15 @@ require (
 	github.com/pborman/uuid v1.2.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/prometheus/client_golang v1.15.1 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.42.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/robfig/cron v1.2.0 // indirect
+	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/stretchr/testify v1.8.1 // indirect
 	github.com/twmb/murmur3 v1.1.5 // indirect
-	github.com/uber-go/tally/v4 v4.1.7 // indirect
 	go.temporal.io/api v1.16.0 // indirect
-	go.temporal.io/sdk/contrib/tally v0.2.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect

@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"math/rand"
+	"os"
 	"strconv"
 	"time"
 
@@ -24,7 +25,7 @@ func main() {
 
 	gameWorkflowOptions := client.StartWorkflowOptions{
 		ID:        gameWorkflowId,
-		TaskQueue: "trivia-game",
+		TaskQueue: os.Getenv("TEMPORAL_TASK_QUEUE"),
 	}
 
 	// Set input using defaults
@@ -47,7 +48,7 @@ func main() {
 
 		playerWorkflowOptions := client.StartWorkflowOptions{
 			ID:        playerWorkflowId,
-			TaskQueue: "trivia-game",
+			TaskQueue: os.Getenv("TEMPORAL_TASK_QUEUE"),
 		}
 
 		playerWorkflowInput := resources.AddPlayerWorkflowInput{

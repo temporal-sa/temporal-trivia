@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/build: "1"
     app.kubernetes.io/component: worker
     app.kubernetes.io/name: temporal-trivia-worker
-    app.kubernetes.io/version: v1.7
+    app.kubernetes.io/version: v2.0
   name: temporal-trivia-worker
 spec:
   progressDeadlineSeconds: 600
@@ -27,7 +27,7 @@ spec:
         app.kubernetes.io/build: "1"
         app.kubernetes.io/component: worker
         app.kubernetes.io/name: temporal-trivia-worker
-        app.kubernetes.io/version: v1.7
+        app.kubernetes.io/version: v2.0
     spec:
       containers:
       - env:
@@ -38,13 +38,15 @@ spec:
               name: chatgpt-key
         - name: TEMPORAL_HOST_URL
           value: temporal-trivia.sdvdw.tmprl.cloud:7233
+        - name: TEMPORAL_TASK_QUEUE
+          value: temporal-trivia-v2
         - name: TEMPORAL_NAMESPACE
           value: temporal-trivia.sdvdw
         - name: TEMPORAL_MTLS_TLS_CERT
           value: /etc/certs/tls.crt
         - name: TEMPORAL_MTLS_TLS_KEY
           value: /etc/certs/tls.key
-        image: ktenzer/temporal-trivia:v1.7
+        image: ktenzer/temporal-trivia:v2.0
         imagePullPolicy: Always
         readinessProbe:
           exec:

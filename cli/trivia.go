@@ -219,7 +219,7 @@ func startGame(c client.Client, chatGptKey, category string, answerTimeout, resu
 	workflowId := "trivia_game_" + uuid.New().String()
 	workflowOptions := client.StartWorkflowOptions{
 		ID:        workflowId,
-		TaskQueue: "trivia-game",
+		TaskQueue: os.Getenv("TEMPORAL_TASK_QUEUE"),
 	}
 
 	// Set ChatGPT API Key

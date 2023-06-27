@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	activities "github.com/ktenzer/temporal-trivia/activities"
 	"github.com/ktenzer/temporal-trivia/resources"
@@ -17,7 +18,7 @@ func main() {
 	}
 	defer c.Close()
 
-	w := worker.New(c, "trivia-game", worker.Options{})
+	w := worker.New(c, os.Getenv("TEMPORAL_TASK_QUEUE"), worker.Options{})
 
 	w.RegisterWorkflow(workflow.TriviaGameWorkflow)
 	w.RegisterWorkflow(workflow.AddPlayerWorkflow)

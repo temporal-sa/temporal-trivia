@@ -4,7 +4,7 @@ WORKDIR /app
 ENV GOBIN=/app/bin
 COPY . .
 
-RUN go install . ./worker
+RUN go install worker/worker.go
 
 FROM docker.io/alpine:latest
 LABEL ios.k8s.display-name="backup-worker" \

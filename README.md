@@ -50,6 +50,7 @@ export TEMPORAL_NAMESPACE="namespace.AccountId or namespace"
 export TEMPORAL_HOST_URL="$TEMPORAL_NAMESPACE.tmprl.cloud:7233 or 127.0.0.1:7233"
 export TEMPORAL_MTLS_TLS_CERT="/path/to/ca.pem"
 export TEMPORAL_MTLS_TLS_KEY="/path/to/ca.key"
+export TEMPORAL_TASK_QUEUE=temporal-trivia
 </pre>
 
 Worker Configuration parameters
@@ -58,14 +59,8 @@ export TEMPORAL_NAMESPACE="namespace.AccountId or namespace"
 export TEMPORAL_HOST_URL="$TEMPORAL_NAMESPACE.tmprl.cloud:7233 or 127.0.0.1:7233"
 export TEMPORAL_MTLS_TLS_CERT="/path/to/ca.pem"
 export TEMPORAL_MTLS_TLS_KEY="/path/to/ca.key"
+export TEMPORAL_TASK_QUEUE=temporal-trivia
 CHATGPT_API_KEY="<API KEY>"
-</pre>
-
-Game parameters
-<pre>
-export TEMPORAL_WORKFLOW_ID="trivia_game_152a2c56-35fc-4e0d-96e9-b5b9544ab9a9"
-export TEMPORAL_TRIVIA_PLAYER="Keith"
-export TEMPORAL_TRIVIA_ANSWER="A"
 </pre>
 
 <pre>

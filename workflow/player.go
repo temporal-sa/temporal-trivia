@@ -2,6 +2,7 @@ package triviagame
 
 import (
 	"errors"
+	"os"
 
 	activities "github.com/ktenzer/temporal-trivia/activities"
 	"github.com/ktenzer/temporal-trivia/resources"
@@ -15,7 +16,8 @@ func AddPlayerWorkflow(ctx workflow.Context, workflowInput resources.AddPlayerWo
 	logger.Info("Trivia Game Started")
 
 	// Activity options
-	ctx = workflow.WithLocalActivityOptions(ctx, setDefaultLocalActivityOptions())
+	ctx = workflow.WithActivityOptions(ctx, setDefaultActivityOptions())
+	laCtx := workflow.WithLocalActivityOptions(ctx, setDefaultLocalActivityOptions())
 
 	activityInput := resources.QueryPlayerActivityInput{
 		WorkflowId: workflowInput.GameWorkflowId,
@@ -25,9 +27,9 @@ func AddPlayerWorkflow(ctx workflow.Context, workflowInput resources.AddPlayerWo
 
 	// run activity to start game and pre-fetch trivia questions and answers
 	var isPlayer bool
-	err := workflow.ExecuteLocalActivity(ctx, activities.QueryPlayerActivity, activityInput).Get(ctx, &isPlayer)
+	err := workflow.ExecuteLocalActivity(laCtx, activities.QueryPlayerActivity, activityInput).Get(laCtx, &isPlayer)
 	if err != nil {
-		logger.Error("Activity failed.", "Error", err)
+		logger.Error("Query Player Activity failed.", "Error", err)
 		return err
 	}
 
@@ -35,7 +37,23 @@ func AddPlayerWorkflow(ctx workflow.Context, workflowInput resources.AddPlayerWo
 		return errors.New("Player " + workflowInput.Player + " already exists!")
 	}
 
-	// TODO: Add Activity to check player name is language compliant
+	// run activity to check for valid name
+	moderationInput := resources.ModerationInput{
+		Url:  os.Getenv("MODERATION_URL"),
+		Name: workflowInput.Player,
+	}
+
+	// run moderation activity to check provided name
+	var moderationResult bool
+	modErr := workflow.ExecuteActivity(ctx, activities.ModerationActivity, moderationInput).Get(ctx, &moderationResult)
+	if modErr != nil {
+		logger.Error("Moderation Activity failed.", "Error", modErr)
+		return modErr
+	}
+
+	if moderationResult {
+		return errors.New("Player name is invalid")
+	}
 
 	// Add player via signal
 	addPlayerSignal := PlayerSignal{
@@ -55,9 +73,9 @@ func AddPlayerWorkflow(ctx workflow.Context, workflowInput resources.AddPlayerWo
 		QueryType:  "poll",
 	}
 
-	err = workflow.ExecuteLocalActivity(ctx, activities.QueryPlayerActivity, activityInput).Get(ctx, &isPlayer)
+	err = workflow.ExecuteLocalActivity(laCtx, activities.QueryPlayerActivity, activityInput).Get(laCtx, &isPlayer)
 	if err != nil {
-		logger.Error("Activity failed.", "Error", err)
+		logger.Error("Query Player Activity failed before adding to game.", "Error", err)
 		return err
 	}
 

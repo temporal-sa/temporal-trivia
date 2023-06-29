@@ -26,6 +26,7 @@ func main() {
 	w.RegisterActivity(activities.TriviaQuestionActivity)
 	w.RegisterActivity(activities.LeaderBoardActivity)
 	w.RegisterActivity(activities.QueryPlayerActivity)
+	w.RegisterActivity(activities.ModerationActivity)
 
 	err = w.Run(worker.InterruptCh())
 	if err != nil {

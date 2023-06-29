@@ -52,3 +52,8 @@ type ScoreBoard struct {
 type Player struct {
 	Score int `json:"score"`
 }
+
+type ModerationInput struct {
+	Url  string `json:"url"`
+	Name string `json:"name"`
+}

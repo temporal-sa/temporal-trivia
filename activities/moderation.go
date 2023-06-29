@@ -15,7 +15,7 @@ import (
 func ModerationActivity(ctx context.Context, input resources.ModerationInput) (bool, error) {
 	logger := activity.GetLogger(ctx)
 
-	logger.Info("ModerationActivity start")
+	logger.Info("ModerationActivity")
 
 	// Username Moderation
 	var fullUrl string
@@ -25,13 +25,13 @@ func ModerationActivity(ctx context.Context, input resources.ModerationInput) (b
 	logger.Info("FULL URL: " + fullUrl)
 	resp, err := http.Get(fullUrl)
 	if err != nil {
-		log.Fatal(err)
+		return flagged, err
 	}
 
 	// Read the response body using io
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal(err.Error())
+		return flagged, err
 	}
 
 	defer resp.Body.Close()
@@ -40,8 +40,6 @@ func ModerationActivity(ctx context.Context, input resources.ModerationInput) (b
 	if error != nil {
 		log.Fatal(error)
 	}
-
-	logger.Info("ModerationActivity")
 
 	return flagged, err
 }

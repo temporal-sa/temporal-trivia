@@ -36,6 +36,8 @@ spec:
             secretKeyRef:
               key: KEY
               name: chatgpt-key
+        - name: MODERATION_URL
+          value: https://www.purgomalum.com/service/containsprofanity?text=
         - name: TEMPORAL_HOST_URL
           value: temporal-trivia.sdvdw.tmprl.cloud:7233
         - name: TEMPORAL_TASK_QUEUE
@@ -46,7 +48,7 @@ spec:
           value: /etc/certs/tls.crt
         - name: TEMPORAL_MTLS_TLS_KEY
           value: /etc/certs/tls.key
-        image: ktenzer/temporal-trivia:v2.0
+        image: ktenzer/temporal-trivia:v2.1
         imagePullPolicy: Always
         readinessProbe:
           exec:

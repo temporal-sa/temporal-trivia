@@ -95,5 +95,8 @@ func (gp *GameProgress) runGame(ctx workflow.Context, gameConfiguration *resourc
 		questionCount++
 	}
 
+	// Set game progress to result phase
+	gp.Stage = "scores"
+
 	return getQuestions, getPlayers
 }

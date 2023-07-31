@@ -79,8 +79,7 @@ func (gp *GameProgress) runGame(ctx workflow.Context, gameConfiguration *resourc
 				submissionsMap[as.Player] = submission
 				result.Submissions = submissionsMap
 			} else {
-				logger.Warn("Incorrect signal received", as)
-				a--
+				logger.Warn("Duplicate signal received", as)
 			}
 
 			(*getQuestions)[key] = result

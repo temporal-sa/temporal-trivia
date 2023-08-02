@@ -14,8 +14,9 @@ type GameWorkflowInput struct {
 }
 
 type AddPlayerWorkflowInput struct {
-	GameWorkflowId string `json:"gameWorkflowId"`
-	Player         string `json:"player"`
+	GameWorkflowId  string `json:"gameWorkflowId"`
+	Player          string `json:"player"`
+	NumberOfPlayers int    `json:"numberOfPlayers"`
 }
 
 type TriviaQuestionsActivityInput struct {
@@ -25,9 +26,10 @@ type TriviaQuestionsActivityInput struct {
 }
 
 type QueryPlayerActivityInput struct {
-	WorkflowId string `json:"workflowId"`
-	Player     string `json:"player"`
-	QueryType  string `json:"queryType"`
+	WorkflowId      string `json:"workflowId"`
+	Player          string `json:"player"`
+	NumberOfPlayers int    `json:"numberOfPlayers"`
+	QueryType       string `json:"queryType"`
 }
 
 type Result struct {

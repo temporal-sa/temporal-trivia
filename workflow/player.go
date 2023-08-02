@@ -20,9 +20,10 @@ func AddPlayerWorkflow(ctx workflow.Context, workflowInput resources.AddPlayerWo
 	laCtx := workflow.WithLocalActivityOptions(ctx, setDefaultLocalActivityOptions())
 
 	activityInput := resources.QueryPlayerActivityInput{
-		WorkflowId: workflowInput.GameWorkflowId,
-		Player:     workflowInput.Player,
-		QueryType:  "normal",
+		WorkflowId:      workflowInput.GameWorkflowId,
+		Player:          workflowInput.Player,
+		NumberOfPlayers: workflowInput.NumberOfPlayers,
+		QueryType:       "normal",
 	}
 
 	// run activity to start game and pre-fetch trivia questions and answers
@@ -34,7 +35,7 @@ func AddPlayerWorkflow(ctx workflow.Context, workflowInput resources.AddPlayerWo
 	}
 
 	if isPlayer {
-		return errors.New("Player " + workflowInput.Player + " already exists!")
+		return errors.New("Player " + workflowInput.Player + " already exists or game full!")
 	}
 
 	// run activity to check for valid name

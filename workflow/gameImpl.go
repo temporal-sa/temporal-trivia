@@ -15,10 +15,6 @@ func (gp *GameProgress) runGame(ctx workflow.Context, gameConfiguration *resourc
 
 	logger := workflow.GetLogger(ctx)
 
-	as := AnswerSignal{}
-	answerSelector := workflow.NewSelector(ctx)
-	as.answerSignal(ctx, answerSelector)
-
 	var questionCount int = 1
 	keys := getSortedGameMap(*getQuestions)
 
@@ -29,13 +25,19 @@ func (gp *GameProgress) runGame(ctx workflow.Context, gameConfiguration *resourc
 		gp.Stage = "answers"
 
 		// Async timer for amount of time to receive answers
-		timer := workflow.NewTimer(ctx, time.Duration(gameConfiguration.AnswerTimeLimit)*time.Second)
+		//timerCtx := workflow.Context(ctx)
+		as := AnswerSignal{}
+		questionCtx, cancelTimer := workflow.WithCancel(ctx)
+		answerSelector := workflow.NewSelector(questionCtx)
+		as.answerSignal(questionCtx, answerSelector)
 
-		var timerFired bool
+		timer := workflow.NewTimer(questionCtx, time.Duration(gameConfiguration.AnswerTimeLimit)*time.Second)
+
+		var timerFired bool = false
 		answerSelector.AddFuture(timer, func(f workflow.Future) {
-			err := f.Get(ctx, nil)
+			err := f.Get(questionCtx, nil)
 			if err == nil {
-				logger.Info("Time limit for question has exceeded the limit of" + intToString(gameConfiguration.AnswerTimeLimit) + " seconds")
+				logger.Info("Time limit for question has exceeded the limit of " + intToString(gameConfiguration.AnswerTimeLimit) + " seconds")
 				timerFired = true
 			}
 		})
@@ -44,18 +46,19 @@ func (gp *GameProgress) runGame(ctx workflow.Context, gameConfiguration *resourc
 		result := (*getQuestions)[key]
 		var submissionsMap = make(map[string]resources.Submission)
 
-		for a := 0; a < gameConfiguration.NumberOfPlayers; a++ {
+		a := 0
+
+		for a < gameConfiguration.NumberOfPlayers {
 			// continue to next question if timer fires
 			if timerFired {
 				break
 			}
 
-			answerSelector.Select(ctx)
+			answerSelector.Select(questionCtx)
 
 			// handle duplicate answers from same player
 			var submission resources.Submission
 			if as.Action == "Answer" && !isAnswerDuplicate(submissionsMap, as.Player) && key == as.Question {
-
 				// ensure answer is upper case
 				answerUpperCase := strings.ToUpper(as.Answer)
 				submission.Answer = answerUpperCase
@@ -67,8 +70,14 @@ func (gp *GameProgress) runGame(ctx workflow.Context, gameConfiguration *resourc
 						result.Winner = as.Player
 						submission.IsFirst = true
 
-						(*getPlayers)[as.Player] = resources.Player{
-							Score: (*getPlayers)[as.Player].Score + 2,
+						if gameConfiguration.NumberOfPlayers > 1 {
+							(*getPlayers)[as.Player] = resources.Player{
+								Score: (*getPlayers)[as.Player].Score + 2,
+							}
+						} else {
+							(*getPlayers)[as.Player] = resources.Player{
+								Score: (*getPlayers)[as.Player].Score + 1,
+							}
 						}
 					} else {
 						(*getPlayers)[as.Player] = resources.Player{
@@ -79,11 +88,14 @@ func (gp *GameProgress) runGame(ctx workflow.Context, gameConfiguration *resourc
 				submissionsMap[as.Player] = submission
 				result.Submissions = submissionsMap
 			} else {
-				logger.Warn("Duplicate signal received", as)
+				logger.Warn("Wrong signal received", as)
 			}
 
 			(*getQuestions)[key] = result
+			a++
 		}
+		// Cancel timer
+		cancelTimer()
 
 		// Set game progress to result phase
 		gp.Stage = "result"

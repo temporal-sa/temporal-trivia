@@ -21,12 +21,14 @@ func TriviaQuestionActivity(ctx context.Context, input resources.TriviaQuestions
 	logger.Info("TriviaQuestionActivity")
 
 	// log message we encountered heartbeat timeout
-	var completedQuestion int
-	if activity.HasHeartbeatDetails(ctx) {
-		if err := activity.GetHeartbeatDetails(ctx, &completedQuestion); err == nil {
-			logger.Info("Resuming from failed attempt", "ReportedProgress", completedQuestion)
+	/*
+		var completedQuestion int
+		if activity.HasHeartbeatDetails(ctx) {
+			if err := activity.GetHeartbeatDetails(ctx, &completedQuestion); err == nil {
+				logger.Info("Resuming from failed attempt", "ReportedProgress", completedQuestion)
+			}
 		}
-	}
+	*/
 
 	// openai client
 	client := openai.NewClient(os.Getenv("CHATGPT_API_KEY"))

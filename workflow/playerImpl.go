@@ -13,13 +13,14 @@ func (ps *PlayerSignal) addPlayers(ctx workflow.Context, gameConfiguration *reso
 	logger := workflow.GetLogger(ctx)
 
 	// Async timer to cancel game if not started
-	cancelTimer := workflow.NewTimer(ctx, time.Duration(gameConfiguration.StartTimeLimit)*time.Second)
+	timerCtx, cancelTimer := workflow.WithCancel(ctx)
+	startGameTimer := workflow.NewTimer(timerCtx, time.Duration(gameConfiguration.StartTimeLimit)*time.Second)
 	addPlayerSelector := workflow.NewSelector(ctx)
 	ps.playerSignal(ctx, addPlayerSelector)
 
 	var cancelTimerFired bool
-	addPlayerSelector.AddFuture(cancelTimer, func(f workflow.Future) {
-		err := f.Get(ctx, nil)
+	addPlayerSelector.AddFuture(startGameTimer, func(f workflow.Future) {
+		err := f.Get(timerCtx, nil)
 		if err == nil {
 			logger.Info("Time limit for starting game has been exceeded " + intToString(gameConfiguration.StartTimeLimit) + " seconds")
 			cancelTimerFired = true
@@ -70,6 +71,9 @@ func (ps *PlayerSignal) addPlayers(ctx workflow.Context, gameConfiguration *reso
 	if cancelTimerFired {
 		return true
 	} else {
+		// cancel timer
+		cancelTimer()
+
 		return false
 	}
 }

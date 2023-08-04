@@ -37,9 +37,9 @@ func TriviaQuestionActivity(ctx context.Context, input resources.TriviaQuestions
 	// pre-fetch list of questions
 	var questions []string
 	for q := 0; q < input.NumberOfQuestions; q++ {
-		activity.RecordHeartbeat(ctx, q)
+		//activity.RecordHeartbeat(ctx, q)
 
-		text := "Give me a " + input.Category + " trivia question that has 4 possible answers A), B), C), or D)? Please provide a newline after the question. Give the correct answer such as Answer: A), B), C) or D)"
+		text := "Give me a " + input.Category + " trivia question that has 4 possible answers A), B), C), or D). Please give the answer to the question.\n\nExample:\n\nWhat planet is known as the red planet?\n\nA) Jupiter\nB) Mars\nC) Saturn\nD) Venus\n\nAnswer: B) Mars"
 		text = strings.Replace(text, "\n", "", -1)
 
 		messages = append(messages, openai.ChatCompletionMessage{

@@ -2,7 +2,6 @@ package triviagame
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/ktenzer/temporal-trivia/resources"
@@ -43,7 +42,6 @@ func QueryPlayerActivity(ctx context.Context, activityInput resources.QueryPlaye
 				break
 			}
 
-			fmt.Printf("HERE 123 %d %d", len(getPlayers), activityInput.NumberOfPlayers)
 			if len(getPlayers) >= activityInput.NumberOfPlayers {
 				isPlayer = true
 				break

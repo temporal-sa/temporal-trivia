@@ -1,5 +1,5 @@
-# temporal-trivia
-A trivia game built on temporal
+# Temporal Durable Trivia
+A trivia game built durably on [Temporal](temporal.io)
 
 ## Workflow Design
 Temporal trivia utlizes two workflows. One workflow orchestrates the game and maintains game state. The other workflow adds a player to the game.
@@ -159,5 +159,41 @@ You can manually run a game and understand how the interaction works using the s
 $ go run simulator/main.go
 </pre>
 
-### Example Event History
+### UI 
+See [Temporal Trivia UI](https://github.com/ktenzer/temporal-trivia-ui)
+
+## Durable Trivia Business Requirements
+**Durable Triva:** a durable, invincible trivia web application: _"fun and resilient!"_
+
+### Core Game Functionality
+Create a game with four phases:
+1. Game setup & configuration
+2. Users joining
+3. Multiple rounds of trivia questions
+4. Game results
+
+### Durable Game Core Requirements
+Our users want these key features:
+- Keep it fresh: every game should have its own unique questions
+- Game questions should be specific to a category, such as geography, history, famous people, etc.
+- Multiple difficulty levels
+- Require users to answer in a specific amount of time depending on difficulty
+- Users pick their own user names - but prevent users from using inappropriate user names
+- Allow configuration of games
+  - number of questions
+  - number of players
+  - defaults and configurable maximums for these configurations
+- Allow joining a game via URL or QR code 
+  - Only allow joining for a set amount of time before the game starts
+- Users want a simple, browser driven UI
+
+### Performance, Scalability, and Security
+We have these requirements for our game's architecture:
+- Automatic cancellation of game if no players/not started after a certain amount of time
+		- wide scalability - 1,000s of games running concurrently
+- Game engine can't fail as a result of users becoming unavailable or unresponsive
+- Game info must be kept away from users and out of their browsers
+  - Game can't expose answers to the UI or APIs until the question ends
+
+## Example Event History
 ![Event History](/img/history.png)

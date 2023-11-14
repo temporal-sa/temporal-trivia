@@ -49,9 +49,10 @@ This demo can demonstrate **insight** if you break from the game and show the st
 | Saga                |   |
 
 ### Production Grade Features
-| Pattern            | ✅ |
+| Feature            | ✅ |
 |:-------------------|---|
 | User Interface   | ✅ |
+
 
 ## Workflow Design
 Temporal trivia utlizes two workflows. One workflow orchestrates the game and maintains game state. The other workflow adds a player to the game.

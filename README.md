@@ -11,12 +11,12 @@ This demo primarily shows the _reliability_ of Temporal.
 | Go           | ✅ |
 | Python (UI)           | ✅ |
 | Docker             | ✅ |
-| Temporal CLI       | ✅ |
+| Temporal CLI (solo)       | ✅ |
 
 ### Features
 | Feature            | ✅ | 
 |:-------------------|---|
-| Schedule       | ✅ |
+| Schedule       |   |
 | Local Activity |   |
 | Signal         | ✅ |
 | Query          | ✅ |
@@ -37,6 +37,12 @@ This demo primarily shows the _reliability_ of Temporal.
 | Long-running        |   |
 | Manual Intervention | ✅ |
 | Saga                |   |
+
+### Production Grade Features
+| Pattern            | ✅ |
+|:-------------------|---|
+| User Interface   | ✅ |
+
 ## Workflow Design
 Temporal trivia utlizes two workflows. One workflow orchestrates the game and maintains game state. The other workflow adds a player to the game.
 ![Workflow Design](/img/Temporal_Trivia_Workflow_Design.png)

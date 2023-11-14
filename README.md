@@ -2,7 +2,17 @@
 A trivia game built durably on [Temporal](temporal.io)
 
 ## Demo Info
-This demo primarily shows the _reliability_ of Temporal.
+This demo primarily shows a fun way to see the _human interaction_ features of Temporal, demonstrating developer **velocity** by delivering a lot of scalability and features by leveraging Temporal features. See [business requirements](#durable-trivia-business-requirements) below.
+
+This demo can also show  **reliability** if you [shut down the services mid-game](https://youtu.be/6WYeWP8zt3w?t=2875).
+
+This demo can demonstrate **insight** if you break from the game and show the state and event history as the game progresses.
+
+| Value Demonstration       | ✅ |
+|:-------------------|---|
+| Velocity (**primary**) | ✅ |
+| Reliability           | ✅ |
+| Insight           | ✅ |
 
 ### Prerequisites
 | Prerequisite       | ✅ |

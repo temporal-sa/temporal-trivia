@@ -27,7 +27,7 @@ This demo can demonstrate **insight** if you break from the game and show the st
 | Feature            | ✅ | 
 |:-------------------|---|
 | Schedule       |   |
-| Local Activity |   |
+| Local Activity | ✅ |
 | Signal         | ✅ |
 | Query          | ✅ |
 | Update         | ✅ |
@@ -46,7 +46,9 @@ This demo can demonstrate **insight** if you break from the game and show the st
 | Continue As New     |   |
 | Long-running        |   |
 | Manual Intervention | ✅ |
+| Actor               | ✅ |
 | Saga                |   |
+| State Machine | ✅ |
 
 ### Production Grade Features
 | Feature            | ✅ |

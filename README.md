@@ -1,6 +1,42 @@
 # Temporal Durable Trivia
 A trivia game built durably on [Temporal](temporal.io)
 
+## Demo Info
+This demo primarily shows the _reliability_ of Temporal.
+
+### Prerequisites
+| Prerequisite       | ✅ |
+|:-------------------|---|
+| Network Connection | ✅ |
+| Go           | ✅ |
+| Python (UI)           | ✅ |
+| Docker             | ✅ |
+| Temporal CLI       | ✅ |
+
+### Features
+| Feature            | ✅ | 
+|:-------------------|---|
+| Schedule       | ✅ |
+| Local Activity |   |
+| Signal         | ✅ |
+| Query          | ✅ |
+| Update         | ✅ |
+| Heartbeat      |   |
+| Timer          | ✅ |
+| Activity Retry |   |
+| Cron           |   |   
+| Data Converter |   |
+
+### Patterns
+| Pattern            | ✅ |
+|:-------------------|---|
+| Entity              | ✅ |
+| Fanout              |   |
+| Long-polling        |   |
+| Continue As New     |   |
+| Long-running        |   |
+| Manual Intervention | ✅ |
+| Saga                |   |
 ## Workflow Design
 Temporal trivia utlizes two workflows. One workflow orchestrates the game and maintains game state. The other workflow adds a player to the game.
 ![Workflow Design](/img/Temporal_Trivia_Workflow_Design.png)

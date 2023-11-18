@@ -19,32 +19,23 @@ func AddPlayerWorkflow(ctx workflow.Context, workflowInput resources.AddPlayerWo
 	ctx = workflow.WithActivityOptions(ctx, setDefaultActivityOptions())
 	laCtx := workflow.WithLocalActivityOptions(ctx, setDefaultLocalActivityOptions())
 
-	activityInput := resources.QueryPlayerActivityInput{
-		WorkflowId:      workflowInput.GameWorkflowId,
-		Player:          workflowInput.Player,
-		NumberOfPlayers: workflowInput.NumberOfPlayers,
-		QueryType:       "normal",
+	// Wait for lobby timer to fire or start game signal
+	activityAddPlayerInput := resources.AddPlayerActivityInput{
+		WorkflowId: workflowInput.GameWorkflowId,
+		Player:     workflowInput.Player,
 	}
+	err := workflow.ExecuteLocalActivity(laCtx, activities.AddPlayerActivity, activityAddPlayerInput).Get(laCtx, nil)
 
-	// run activity to start game and pre-fetch trivia questions and answers
-	var isPlayer bool
-	err := workflow.ExecuteLocalActivity(laCtx, activities.QueryPlayerActivity, activityInput).Get(laCtx, &isPlayer)
 	if err != nil {
-		logger.Error("Query Player Activity failed.", "Error", err)
-		return err
+		return errors.New(err.Error())
 	}
 
-	if isPlayer {
-		return errors.New("Player " + workflowInput.Player + " already exists or game full!")
-	}
-
-	// run activity to check for valid name
+	// run activity to check player name against moderation api
 	moderationInput := resources.ModerationInput{
 		Url:  os.Getenv("MODERATION_URL"),
 		Name: workflowInput.Player,
 	}
 
-	// run moderation activity to check provided name
 	var moderationResult bool
 	modErr := workflow.ExecuteActivity(ctx, activities.ModerationActivity, moderationInput).Get(ctx, &moderationResult)
 	if modErr != nil {
@@ -54,34 +45,6 @@ func AddPlayerWorkflow(ctx workflow.Context, workflowInput resources.AddPlayerWo
 
 	if moderationResult {
 		return errors.New("Player name is invalid")
-	}
-
-	// Add player via signal
-	addPlayerSignal := PlayerSignal{
-		Action: "Player",
-		Player: workflowInput.Player,
-	}
-
-	err = workflow.SignalExternalWorkflow(ctx, workflowInput.GameWorkflowId, "", "add-player-signal", addPlayerSignal).Get(ctx, nil)
-	if err != nil {
-		return err
-	}
-
-	// Ensure player is added
-	activityInput = resources.QueryPlayerActivityInput{
-		WorkflowId: workflowInput.GameWorkflowId,
-		Player:     workflowInput.Player,
-		QueryType:  "poll",
-	}
-
-	err = workflow.ExecuteLocalActivity(laCtx, activities.QueryPlayerActivity, activityInput).Get(laCtx, &isPlayer)
-	if err != nil {
-		logger.Error("Query Player Activity failed before adding to game.", "Error", err)
-		return err
-	}
-
-	if !isPlayer {
-		return errors.New("Player " + workflowInput.Player + " could not be added to the game")
 	}
 
 	return nil

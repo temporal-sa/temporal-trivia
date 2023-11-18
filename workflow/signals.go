@@ -9,11 +9,6 @@ type GameSignal struct {
 	Action string `json:"action"`
 }
 
-type PlayerSignal struct {
-	Action string `json:"action"`
-	Player string `json:"player"`
-}
-
 type AnswerSignal struct {
 	Action   string `json:"action"`
 	Player   string `json:"player"`
@@ -28,16 +23,6 @@ func (signal *GameSignal) gameSignal(ctx workflow.Context, startGameSelector wor
 	startGameSelector.AddReceive(addPlayerSignalChan, func(channel workflow.ReceiveChannel, more bool) {
 		channel.Receive(ctx, &signal)
 		log.Info("Recieved signal Action: " + signal.Action)
-	})
-}
-
-func (signal *PlayerSignal) playerSignal(ctx workflow.Context, addPlayerSelector workflow.Selector) {
-	log := workflow.GetLogger(ctx)
-
-	addPlayerSignalChan := workflow.GetSignalChannel(ctx, AddPlayerSignalChannelName)
-	addPlayerSelector.AddReceive(addPlayerSignalChan, func(channel workflow.ReceiveChannel, more bool) {
-		channel.Receive(ctx, &signal)
-		log.Info("Recieved signal Action: " + signal.Action + " Player: " + signal.Player)
 	})
 }
 

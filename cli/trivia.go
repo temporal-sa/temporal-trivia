@@ -175,6 +175,8 @@ func main() {
 				}
 			}
 		}
+
+		time.Sleep(time.Duration(10) * time.Second)
 		getPlayers, err := sendScoreQuery(c, workflowId, "getPlayers")
 		if err != nil {
 			log.Fatalln("Error sending the Query", err)
@@ -238,14 +240,14 @@ func startGame(c client.Client, chatGptKey, category string, answerTimeout, resu
 	}
 
 	// Add player
-	addPlayerSignal := triviagame.PlayerSignal{
-		Action: "Player",
-		Player: "player0",
-	}
-
-	err = sendAddPlayerSignal(c, addPlayerSignal, workflowId, AddPlayerSignalChannelName)
+	updateHandle, err := c.UpdateWorkflow(context.Background(), workflowId, "", "AddPlayer", "player0")
 	if err != nil {
-		log.Fatalln("Error sending the Signal", err)
+		log.Fatalln("Unable to send update request", err)
+	}
+	var updateResult bool
+	err = updateHandle.Get(context.Background(), &updateResult)
+	if err != nil {
+		log.Fatalln("Unable to add player", err)
 	}
 
 	// Start game
@@ -310,16 +312,6 @@ func sendProgressQuery(c client.Client, workflowId, query string) (triviagame.Ga
 }
 
 func sendStartGameSignal(c client.Client, signal triviagame.GameSignal, workflowId, signalType string) error {
-
-	err := c.SignalWorkflow(context.Background(), workflowId, "", signalType, signal)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func sendAddPlayerSignal(c client.Client, signal triviagame.PlayerSignal, workflowId, signalType string) error {
 
 	err := c.SignalWorkflow(context.Background(), workflowId, "", signalType, signal)
 	if err != nil {

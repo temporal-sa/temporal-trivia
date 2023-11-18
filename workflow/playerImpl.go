@@ -9,17 +9,16 @@ import (
 	_ "go.temporal.io/sdk/contrib/tools/workflowcheck/determinism"
 )
 
-func (ps *PlayerSignal) addPlayers(ctx workflow.Context, gameConfiguration *resources.GameConfiguration, getPlayers *map[string]resources.Player) bool {
+func addPlayers(ctx workflow.Context, gameConfiguration *resources.GameConfiguration, getPlayers *map[string]resources.Player) bool {
 	logger := workflow.GetLogger(ctx)
 
 	// Async timer to cancel game if not started
 	timerCtx, cancelTimer := workflow.WithCancel(ctx)
 	startGameTimer := workflow.NewTimer(timerCtx, time.Duration(gameConfiguration.StartTimeLimit)*time.Second)
-	addPlayerSelector := workflow.NewSelector(ctx)
-	ps.playerSignal(ctx, addPlayerSelector)
+	startGameTimerSelector := workflow.NewSelector(ctx)
 
 	var cancelTimerFired bool
-	addPlayerSelector.AddFuture(startGameTimer, func(f workflow.Future) {
+	startGameTimerSelector.AddFuture(startGameTimer, func(f workflow.Future) {
 		err := f.Get(timerCtx, nil)
 		if err == nil {
 			logger.Info("Time limit for starting game has been exceeded " + intToString(gameConfiguration.StartTimeLimit) + " seconds")
@@ -28,6 +27,8 @@ func (ps *PlayerSignal) addPlayers(ctx workflow.Context, gameConfiguration *reso
 	})
 
 	isStartGame := boolPointer(false)
+
+	// Receive signal using workflow coroutine async (for fun)
 	workflow.Go(ctx, func(gCtx workflow.Context) {
 		gs := GameSignal{}
 
@@ -41,20 +42,7 @@ func (ps *PlayerSignal) addPlayers(ctx workflow.Context, gameConfiguration *reso
 		}
 	})
 
-	workflow.Go(ctx, func(gCtx workflow.Context) {
-		for {
-			addPlayerSelector.Select(gCtx)
-
-			if ps.Action == "Player" && ps.Player != "" {
-				if _, ok := (*getPlayers)[ps.Player]; !ok {
-					(*getPlayers)[ps.Player] = resources.Player{
-						Score: 0,
-					}
-				}
-			}
-		}
-	})
-
+	// Wait for either timer fired or start game signal
 	workflow.Await(ctx, func() bool {
 		if *isStartGame {
 			return true

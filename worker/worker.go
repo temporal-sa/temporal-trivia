@@ -25,8 +25,8 @@ func main() {
 	w.RegisterActivity(activities.GetRandomCategoryActivity)
 	w.RegisterActivity(activities.TriviaQuestionActivity)
 	w.RegisterActivity(activities.LeaderBoardActivity)
-	w.RegisterActivity(activities.QueryPlayerActivity)
 	w.RegisterActivity(activities.ModerationActivity)
+	w.RegisterActivity(activities.AddPlayerActivity)
 
 	err = w.Run(worker.InterruptCh())
 	if err != nil {

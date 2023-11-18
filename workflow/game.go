@@ -42,10 +42,15 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 		return err
 	}
 
-	// Add players to game using signal and wait for start game signal.
-	// If game is not started before start game timeout, workflow will fail.
-	var ps PlayerSignal
-	isCancelled := ps.addPlayers(ctx, gameConfiguration, getPlayers)
+	// Initialize update handler to add and validate players joining game
+	err = updatePlayer(ctx, *getPlayers)
+	if err != nil {
+		logger.Error("Update failed.", "Error", err)
+		return err
+	}
+
+	// Start timer and wait for timer to fire or start game signal
+	isCancelled := addPlayers(ctx, gameConfiguration, getPlayers)
 	if isCancelled {
 		return errors.New("Time limit of " + intToString(gameConfiguration.StartTimeLimit) + gameConfiguration.Category + " seconds for starting game has been exceeded!")
 	}

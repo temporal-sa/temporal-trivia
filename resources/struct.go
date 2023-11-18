@@ -59,3 +59,8 @@ type ModerationInput struct {
 	Url  string `json:"url"`
 	Name string `json:"name"`
 }
+
+type AddPlayerActivityInput struct {
+	WorkflowId string `json:"workflowId"`
+	Player     string `json:"player"`
+}

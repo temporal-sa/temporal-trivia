@@ -17,18 +17,6 @@ func AddPlayerWorkflow(ctx workflow.Context, workflowInput resources.AddPlayerWo
 
 	// Activity options
 	ctx = workflow.WithActivityOptions(ctx, setDefaultActivityOptions())
-	laCtx := workflow.WithLocalActivityOptions(ctx, setDefaultLocalActivityOptions())
-
-	// Wait for lobby timer to fire or start game signal
-	activityAddPlayerInput := resources.AddPlayerActivityInput{
-		WorkflowId: workflowInput.GameWorkflowId,
-		Player:     workflowInput.Player,
-	}
-	err := workflow.ExecuteLocalActivity(laCtx, activities.AddPlayerActivity, activityAddPlayerInput).Get(laCtx, nil)
-
-	if err != nil {
-		return errors.New(err.Error())
-	}
 
 	// run activity to check player name against moderation api
 	moderationInput := resources.ModerationInput{
@@ -45,6 +33,20 @@ func AddPlayerWorkflow(ctx workflow.Context, workflowInput resources.AddPlayerWo
 
 	if moderationResult {
 		return errors.New("Player name is invalid")
+	}
+
+	// Using update in local activity add player to game
+	laCtx := workflow.WithLocalActivityOptions(ctx, setDefaultLocalActivityOptions())
+
+	activityAddPlayerInput := resources.AddPlayerActivityInput{
+		WorkflowId: workflowInput.GameWorkflowId,
+		Player:     workflowInput.Player,
+	}
+
+	err := workflow.ExecuteLocalActivity(laCtx, activities.AddPlayerActivity, activityAddPlayerInput).Get(laCtx, nil)
+
+	if err != nil {
+		return errors.New(err.Error())
 	}
 
 	return nil

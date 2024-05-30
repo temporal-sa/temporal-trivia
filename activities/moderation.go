@@ -3,7 +3,6 @@ package triviagame
 import (
 	"context"
 	"io"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -36,9 +35,9 @@ func ModerationActivity(ctx context.Context, input resources.ModerationInput) (b
 
 	defer resp.Body.Close()
 
-	flagged, error := strconv.ParseBool(string(body))
-	if error != nil {
-		log.Fatal(error)
+	flagged, err = strconv.ParseBool(string(body))
+	if err != nil {
+		logger.Error(err.Error())
 	}
 
 	return flagged, err

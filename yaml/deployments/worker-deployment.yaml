@@ -9,7 +9,7 @@ metadata:
   name: temporal-trivia-worker
 spec:
   progressDeadlineSeconds: 600
-  replicas: 3
+  replicas: 1
   revisionHistoryLimit: 10
   selector:
     matchLabels:
@@ -36,6 +36,11 @@ spec:
             secretKeyRef:
               key: KEY
               name: chatgpt-key
+        - name: KAPA_API_KEY
+          valueFrom:
+            secretKeyRef:
+              key: KEY
+              name: kapa-key
         - name: MODERATION_URL
           value: https://www.purgomalum.com/service/containsprofanity?text=
         - name: TEMPORAL_HOST_URL
@@ -48,7 +53,7 @@ spec:
           value: /etc/certs/tls.crt
         - name: TEMPORAL_MTLS_TLS_KEY
           value: /etc/certs/tls.key
-        image: ktenzer/temporal-trivia:v2.5
+        image: ktenzer/temporal-trivia:v2.7
         imagePullPolicy: Always
         readinessProbe:
           exec:

@@ -3,7 +3,6 @@ package triviagame
 import (
 	"context"
 	"math/rand"
-	"time"
 
 	"go.temporal.io/sdk/activity"
 
@@ -15,12 +14,22 @@ func GetRandomCategoryActivity(ctx context.Context) (string, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("GetRandomCategoryActivity")
 
-	rand.Seed(time.Now().UnixNano())
-
-	keys := []string{"General", "Sports", "Science", "Travel", "Geography", "Capitols", "Authors", "Books", "Animals", "Plants", "Foods", "Cities"}
+	keys := []string{"Temporal.io", "General", "Sports", "Science", "Travel", "Geography", "Capitols", "Authors", "Books", "Animals", "Plants", "Foods", "Cities"}
 	randomIndex := rand.Intn(len(keys))
 
 	logger.Info("Category is " + keys[randomIndex])
+
+	return keys[randomIndex], nil
+}
+
+func GetRandomTemporalCategoryActivity(ctx context.Context) (string, error) {
+	logger := activity.GetLogger(ctx)
+	logger.Info("GetRandomCategoryActivity")
+
+	keys := []string{"SDK", "Cloud", "CLI", "History", "Server", "Worker", "General"}
+	randomIndex := rand.Intn(len(keys))
+
+	logger.Info("Temporal Category is " + keys[randomIndex])
 
 	return keys[randomIndex], nil
 }

@@ -1,4 +1,4 @@
-FROM docker.io/library/golang:1.18-alpine
+FROM docker.io/library/golang:1.20-alpine
 RUN mkdir -p /app/bin
 WORKDIR /app
 ENV GOBIN=/app/bin

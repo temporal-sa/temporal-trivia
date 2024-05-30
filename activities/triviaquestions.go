@@ -2,6 +2,9 @@ package triviagame
 
 import (
 	"context"
+	"encoding/json"
+	"io"
+	"net/http"
 	"os"
 	"regexp"
 	"strings"
@@ -15,20 +18,86 @@ import (
 	_ "go.temporal.io/sdk/contrib/tools/workflowcheck/determinism"
 )
 
-func TriviaQuestionActivity(ctx context.Context, input resources.TriviaQuestionsActivityInput) (map[int]resources.Result, error) {
+func TriviaQuestionKapaAI(ctx context.Context, input resources.TriviaQuestionsActivityInput) (map[int]resources.Result, error) {
 	logger := activity.GetLogger(ctx)
 
-	logger.Info("TriviaQuestionActivity")
+	logger.Info("KAPA AI TriviaQuestionActivity")
 
-	// log message we encountered heartbeat timeout
-	/*
-		var completedQuestion int
-		if activity.HasHeartbeatDetails(ctx) {
-			if err := activity.GetHeartbeatDetails(ctx, &completedQuestion); err == nil {
-				logger.Info("Resuming from failed attempt", "ReportedProgress", completedQuestion)
-			}
+	var gameMap map[int]resources.Result
+	var threadId string
+	var questions []string
+	for q := 0; q < input.NumberOfQuestions; q++ {
+		category, err := GetRandomTemporalCategoryActivity(ctx)
+		if err != nil {
+			return gameMap, err
 		}
-	*/
+
+		var text string
+		var apiURL string
+		text = "Please+provide+me+with+a+new+random+" + category + "+Temporal+question.+followed+by+four+possible+answers+in+the+format+A),+B),+C),+D).+Please+start+a+new+line+after+the+question.+Also,+provide+the+correct+answer+in+the+format+'Answer:+A)',+'Answer:+B)',+'Answer:+C)'+or+'Answer:+D)'.+Please+ensure+that+there+is+a+space+between+the+colon+and+the+answer+letter+in+your+response."
+		text = strings.Replace(text, "\n", "", -1)
+
+		if len(strings.TrimSpace(threadId)) == 0 {
+			apiURL = "https://api.kapa.ai/query/v1?query=" + text
+		} else {
+			apiURL = "https://api.kapa.ai/query/v1/thread/f9b453b4-dd78-414e-9177-95edbd48a22c?query=" + text
+		}
+
+		apiKey := os.Getenv("KAPA_API_KEY")
+
+		// Create a new request using http
+		req, err := http.NewRequest("GET", apiURL, nil)
+		if err != nil {
+			logger.Error("Error creating request:", err)
+			return gameMap, err
+		}
+
+		// Add API Token
+		req.Header.Set("X-API-TOKEN", apiKey)
+
+		// Create a client and send the request
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			logger.Error("Error making request:", err)
+			return gameMap, err
+		}
+		defer resp.Body.Close()
+
+		// Check the response status code
+		if resp.StatusCode != http.StatusOK {
+			logger.Error("Received non-200 response code: %d, status: %s\n", resp.StatusCode, resp.Status)
+			return gameMap, err
+		}
+
+		// Read the response body
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			logger.Error("Error reading response body:", err)
+			return gameMap, err
+		}
+
+		// Decode the JSON response
+		var kapaResp resources.KapaResponse
+		err = json.Unmarshal(bodyBytes, &kapaResp)
+		if err != nil {
+			logger.Error("Error decoding JSON response:", err)
+			return gameMap, err
+		}
+
+		logger.Info(kapaResp.Answer)
+		questions = append(questions, kapaResp.Answer)
+		threadId = kapaResp.ThreadID
+	}
+
+	gameMap = populateGameMap(questions)
+	return gameMap, nil
+}
+
+func TriviaQuestionChatGPT(ctx context.Context, input resources.TriviaQuestionsActivityInput) (map[int]resources.Result, error) {
+	logger := activity.GetLogger(ctx)
+
+	logger.Info("ChatGPT TriviaQuestionActivity")
 
 	// openai client
 	client := openai.NewClient(os.Getenv("CHATGPT_API_KEY"))
@@ -123,7 +192,7 @@ func parsePossibleAnswers(question string) map[string]string {
 
 // Parse answer
 func parseCorrectAnswer(question string) string {
-	re := regexp.MustCompile(`\w+\s*Answer:? ([A-D])\)?`)
+	re := regexp.MustCompile(`\s*Answer:? ([A-D])\)?`)
 
 	match := re.FindStringSubmatch(question)
 	if len(match) > 0 {

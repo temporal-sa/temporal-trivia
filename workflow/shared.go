@@ -45,7 +45,7 @@ func triviaQuestionsActivityInput(category string, numberQuestions int) resource
 // Activity Options
 func setDefaultActivityOptions() workflow.ActivityOptions {
 	ao := workflow.ActivityOptions{
-		StartToCloseTimeout: 120 * time.Second,
+		StartToCloseTimeout: 300 * time.Second,
 		RetryPolicy: &temporal.RetryPolicy{
 			InitialInterval:    time.Second,
 			BackoffCoefficient: 2.0,

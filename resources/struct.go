@@ -64,3 +64,9 @@ type AddPlayerActivityInput struct {
 	WorkflowId string `json:"workflowId"`
 	Player     string `json:"player"`
 }
+
+type KapaResponse struct {
+	Answer           string `json:"answer"`
+	ThreadID         string `json:"thread_id"`
+	QuestionAnswerID string `json:"question_answer_id"`
+}

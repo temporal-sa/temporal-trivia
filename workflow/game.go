@@ -68,10 +68,20 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 
 	// Run activity to start game and pre-fetch trivia questions and answers
 	activityInput := triviaQuestionsActivityInput(gameConfiguration.Category, gameConfiguration.NumberOfQuestions)
-	err = workflow.ExecuteActivity(ctx, activities.TriviaQuestionActivity, activityInput).Get(ctx, &getQuestions)
-	if err != nil {
-		logger.Error("Activity failed.", "Error", err)
-		return err
+
+	logger.Info(gameConfiguration.Category)
+	if gameConfiguration.Category == "temporal" {
+		err = workflow.ExecuteActivity(ctx, activities.TriviaQuestionKapaAI, activityInput).Get(ctx, &getQuestions)
+		if err != nil {
+			logger.Error("Activity failed.", "Error", err)
+			return err
+		}
+	} else {
+		err = workflow.ExecuteActivity(ctx, activities.TriviaQuestionChatGPT, activityInput).Get(ctx, &getQuestions)
+		if err != nil {
+			logger.Error("Activity failed.", "Error", err)
+			return err
+		}
 	}
 
 	// Run the game loop

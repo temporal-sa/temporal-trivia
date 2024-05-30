@@ -31,11 +31,9 @@ func addPlayers(ctx workflow.Context, gameConfiguration *resources.GameConfigura
 	// Receive signal using workflow coroutine async (for fun)
 	workflow.Go(ctx, func(gCtx workflow.Context) {
 		gs := GameSignal{}
+		gs.gameSignal(ctx, startGameTimerSelector)
 
-		startGameSelector := workflow.NewSelector(gCtx)
-		gs.gameSignal(ctx, startGameSelector)
-
-		startGameSelector.Select(gCtx)
+		startGameTimerSelector.Select(gCtx)
 
 		if gs.Action == "StartGame" {
 			*isStartGame = true

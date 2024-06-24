@@ -20,8 +20,10 @@ func main() {
 
 	w := worker.New(c, os.Getenv("TEMPORAL_TASK_QUEUE"), worker.Options{})
 
+	w.RegisterWorkflow(workflow.TriviaGamesWorkflow)
 	w.RegisterWorkflow(workflow.TriviaGameWorkflow)
 	w.RegisterWorkflow(workflow.AddPlayerWorkflow)
+	w.RegisterActivity(activities.UpdateGameActivity)
 	w.RegisterActivity(activities.GetRandomCategoryActivity)
 	w.RegisterActivity(activities.TriviaQuestionChatGPT)
 	w.RegisterActivity(activities.TriviaQuestionKapaAI)

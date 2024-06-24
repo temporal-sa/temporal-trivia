@@ -5,6 +5,7 @@ type GameWorkflowConfig struct {
 }
 
 type GameWorkflowInput struct {
+	GameId            string `json:"gameId"`
 	Category          string `json:"category"`
 	NumberOfQuestions int    `json:"numberOfQuestions"`
 	NumberOfPlayers   int    `json:"numberOfPlayers"`

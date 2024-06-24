@@ -58,7 +58,7 @@ func (gp *GameProgress) runGame(ctx workflow.Context, gameConfiguration *resourc
 
 			// handle duplicate answers from same player
 			var submission resources.Submission
-			if as.Action == "Answer" && !isAnswerDuplicate(submissionsMap, as.Player) && key == as.Question {
+			if as.Action == "Answer" && isPlayerValid(*getPlayers, as.Player) && !isAnswerDuplicate(submissionsMap, as.Player) && key == as.Question {
 				// ensure answer is upper case
 				answerUpperCase := strings.ToUpper(as.Answer)
 				submission.Answer = answerUpperCase

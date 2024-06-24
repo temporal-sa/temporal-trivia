@@ -61,3 +61,19 @@ func (gp *GameProgress) initGetProgressQuery(ctx workflow.Context, numberQuestio
 
 	return *gp, nil
 }
+
+// Setup query handler for games
+func initGamesQuery(ctx workflow.Context) (*map[string]string, error) {
+	log := workflow.GetLogger(ctx)
+	getGames := make(map[string]string)
+
+	err := workflow.SetQueryHandler(ctx, "getGames", func(input []byte) (map[string]string, error) {
+		return getGames, nil
+	})
+	if err != nil {
+		log.Error("SetQueryHandler failed for getGames: " + err.Error())
+		return &getGames, err
+	}
+
+	return &getGames, nil
+}

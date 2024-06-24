@@ -49,10 +49,31 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 		return err
 	}
 
+	laCtx := workflow.WithLocalActivityOptions(ctx, setDefaultLocalActivityOptions())
+	err = workflow.ExecuteLocalActivity(laCtx, activities.UpdateGameActivity, workflowInput.GameId, "starting").Get(laCtx, nil)
+
+	if err != nil {
+		return errors.New(err.Error())
+	}
+
 	// Start timer and wait for timer to fire or start game signal
 	isCancelled := addPlayers(ctx, gameConfiguration, getPlayers)
 	if isCancelled {
+		// Update game state to be completed
+		err = workflow.ExecuteLocalActivity(laCtx, activities.UpdateGameActivity, workflowInput.GameId, "completed").Get(laCtx, nil)
+
+		if err != nil {
+			return errors.New(err.Error() + " Time limit of " + intToString(gameConfiguration.StartTimeLimit) + gameConfiguration.Category + " seconds for starting game has been exceeded!")
+		}
+
 		return errors.New("Time limit of " + intToString(gameConfiguration.StartTimeLimit) + gameConfiguration.Category + " seconds for starting game has been exceeded!")
+	}
+
+	// Using game state to be started
+	err = workflow.ExecuteLocalActivity(laCtx, activities.UpdateGameActivity, workflowInput.GameId, "running").Get(laCtx, nil)
+
+	if err != nil {
+		return errors.New(err.Error())
 	}
 
 	// Set trivia question category randomly, if category is empty
@@ -93,6 +114,13 @@ func TriviaGameWorkflow(ctx workflow.Context, workflowInput resources.GameWorkfl
 	if err != nil {
 		logger.Error("Activity failed.", "Error", err)
 		return err
+	}
+
+	// Update game state to be completed
+	err = workflow.ExecuteLocalActivity(laCtx, activities.UpdateGameActivity, workflowInput.GameId, "completed").Get(laCtx, nil)
+
+	if err != nil {
+		return errors.New(err.Error())
 	}
 
 	return nil

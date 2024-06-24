@@ -240,10 +240,17 @@ func startGame(c client.Client, chatGptKey, category string, answerTimeout, resu
 	}
 
 	// Add player
-	updateHandle, err := c.UpdateWorkflow(context.Background(), workflowId, "", "AddPlayer", "player0")
+	updateHandle, err := c.UpdateWorkflow(context.Background(), client.UpdateWorkflowOptions{
+		WorkflowID:   workflowId,
+		UpdateName:   "AddPlayer",
+		WaitForStage: client.WorkflowUpdateStageCompleted,
+		Args:         []interface{}{"player0"},
+	})
+
 	if err != nil {
 		log.Fatalln("Unable to send update request", err)
 	}
+
 	var updateResult bool
 	err = updateHandle.Get(context.Background(), &updateResult)
 	if err != nil {

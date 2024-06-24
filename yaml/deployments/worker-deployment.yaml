@@ -53,7 +53,7 @@ spec:
           value: /etc/certs/tls.crt
         - name: TEMPORAL_MTLS_TLS_KEY
           value: /etc/certs/tls.key
-        image: ktenzer/temporal-trivia:v2.7
+        image: ktenzer/temporal-trivia:v2.8
         imagePullPolicy: Always
         readinessProbe:
           exec:

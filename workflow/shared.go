@@ -19,6 +19,14 @@ func isAnswerDuplicate(submissionMap map[string]resources.Submission, player str
 	return false
 }
 
+// Detect player that wasn't added to game
+func isPlayerValid(players map[string]resources.Player, player string) bool {
+	if _, ok := players[player]; ok {
+		return true
+	}
+	return false
+}
+
 // Sort gameMap
 func getSortedGameMap(gameMap map[int]resources.Result) []int {
 
